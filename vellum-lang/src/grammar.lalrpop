@@ -1,4 +1,4 @@
-use crate::ast::{Identifier, Item, Primitive, Pointer, PointerModifier, Struct, Type};
+use crate::ast::{Identifier, Import, Item, ItemType, Primitive, Pointer, PointerModifier, Struct, Type};
 use crate::lexer;
 use codespan::{ByteIndex, Span};
 
@@ -20,9 +20,22 @@ extern {
         "const" => lexer::Token::Const,
         "owned" => lexer::Token::Owned,
         "mut" => lexer::Token::Mut,
+        "import" => lexer::Token::Import,
+        "import-path" => lexer::Token::ImportPath(<String>),
         "identifier" => lexer::Token::Identifier(<String>),
+        "comment" => lexer::Token::Comment(<String>),
+        "doc-comment" => lexer::Token::DocComment(<String>),
     }
 }
+
+ImportPath: String =
+    "import-path" => <>;
+
+Comment: String =
+    "comment" => <>;
+
+DocComment: String =
+    "doc-comment" => <>;    
 
 Primitive: Primitive =
     "primitive" => <>;
@@ -54,9 +67,16 @@ StructField: (Identifier, Type) =
 Struct: Struct =
     <l: @L> "struct" <name: Identifier> "{" <fields: StructField*> "}" <r: @R> => Struct { span: Span::new(l, r), name, fields };
 
-Item: Item = {
-    <s: Struct> => Item::Struct(s),
+Import: Import =
+    <l: @L> "import" <path: ImportPath> <r: @R> => Import { span: Span::new(l, r), path };
+
+ItemType: ItemType = {
+    <s: Struct> => ItemType::Struct(s),
+    <i: Import> => ItemType::Import(i),
 }
+
+Item: Item =
+    <docs: DocComment*> <item: ItemType> => Item { docs, item };
 
 pub Program: Vec<Item> =
     <items: Item*> => <>;

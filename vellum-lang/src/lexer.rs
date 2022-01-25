@@ -59,6 +59,15 @@ pub enum Token {
     #[token("mut")]
     Mut,
 
+    #[token("import")]
+    Import,
+
+    #[regex(r"'[^\n\r]*'", |lex| {
+        let len = lex.slice().len();
+        lex.slice()[1..len-1].to_string()
+    })]
+    ImportPath(String),
+
     #[regex(r"[a-zA-Z][a-zA-Z_]*", |lex| lex.slice().to_string())]
     Identifier(String),
 

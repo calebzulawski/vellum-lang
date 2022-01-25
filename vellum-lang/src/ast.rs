@@ -11,6 +11,17 @@ pub struct Identifier {
     pub identifier: String,
 }
 
-pub enum Item {
+pub struct Item {
+    pub docs: Vec<String>,
+    pub item: ItemType,
+}
+
+pub struct Import {
+    pub span: Span,
+    pub path: String,
+}
+
+pub enum ItemType {
+    Import(Import),
     Struct(Struct),
 }
