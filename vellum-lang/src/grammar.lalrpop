@@ -1,25 +1,62 @@
-use crate::ast::{Identifier, Managed, Constness, Pointer, Type};
-use codespan::{Span};
+use crate::ast::{Identifier, Item, Primitive, Pointer, PointerModifier, Struct, Type};
+use crate::lexer;
+use codespan::{ByteIndex, Span};
 
 grammar;
 
-pub Identifier: Identifier =
-    <l: @L> <identifier: r"[a-zA-Z_][a-zA-Z0-9_]+"> <r: @R> => Identifier { span: Span::new(l as u32, r as u32), identifier: identifier.to_string() };
+extern {
+    type Location = ByteIndex;
+    type Error = ();
 
-Managed: Managed = {
-    "managed" "(" <with: Identifier> ")" => Managed::With(with),
-    "managed" => Managed::Embedded,
+    enum lexer::Token {
+        "{" => lexer::Token::LeftBracket,
+        "}" => lexer::Token::RightBracket,
+        ":" => lexer::Token::Colon,
+        "," => lexer::Token::Comma,
+        ";" => lexer::Token::Semicolon,
+        "*" => lexer::Token::Asterisk,
+        "primitive" => lexer::Token::Primitive(<Primitive>),
+        "struct" => lexer::Token::Struct,
+        "const" => lexer::Token::Const,
+        "owned" => lexer::Token::Owned,
+        "mut" => lexer::Token::Mut,
+        "identifier" => lexer::Token::Identifier(<String>),
+    }
 }
 
-Constness: Constness = {
-    "const" => Constness::Const,
-    "mut" => Constness::Mut,
+Primitive: Primitive =
+    "primitive" => <>;
+
+IdentifierString: String =
+    "identifier" => <>;
+
+Identifier: Identifier =
+    <l: @L> <identifier: IdentifierString> <r: @R> => Identifier { span: Span::new(l, r), identifier };
+
+PointerModifier: PointerModifier = {
+    "const" => PointerModifier::Const,
+    "mut" => PointerModifier::Mut,
+    "owned" => PointerModifier::Owned,
 }
 
-pub Pointer: Pointer =
-    <l: @L> <managed: Managed?> <constness: Constness> "*" <ty: Type> <r: @R> => Pointer { span: Span::new(l as u32, r as u32), managed, constness, ty: Box::new(ty) };
+Pointer: Pointer =
+    <l: @L> <modifier: PointerModifier> "*" <ty: Type> <r: @R> => Pointer { span: Span::new(l, r), modifier, ty: Box::new(ty) };
 
-pub Type: Type = {
+Type: Type = {
+    <l: @L> <primitive: Primitive> <r: @R> => Type::Primitive { span: Span::new(l, r), primitive },
     <pointer: Pointer> => Type::Pointer(pointer),
     <identifier: Identifier> => Type::Identifier(identifier),
 }
+
+StructField: (Identifier, Type) =
+    <identifier: Identifier> ":" <ty: Type> "," => (identifier, ty);
+
+Struct: Struct =
+    <l: @L> "struct" <name: Identifier> "{" <fields: StructField*> "}" <r: @R> => Struct { span: Span::new(l, r), name, fields };
+
+Item: Item = {
+    <s: Struct> => Item::Struct(s),
+}
+
+pub Program: Vec<Item> =
+    <items: Item*> => <>;

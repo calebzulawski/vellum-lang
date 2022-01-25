@@ -10,3 +10,7 @@ pub struct Identifier {
     pub span: Span,
     pub identifier: String,
 }
+
+pub enum Item {
+    Struct(Struct),
+}

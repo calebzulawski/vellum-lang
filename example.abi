@@ -1,17 +1,5 @@
-/// A struct.
+/// A struct
 struct Foo {
     foo: u32,
     bar: i8,
 }
-
-/// Specifies a destructor for Foo.
-fn Foo_delete(foo: destroy * Foo);
-
-/// Deletes using `Foo_delete`.
-fn foo(foo: u32, bar: i8) -> managed(Foo_delete) const * Foo;
-
-/// Deletes using an attached deleter.
-fn foo2(foo: u32, bar: i8) -> managed mut * Foo;
-
-/// Doesn't specify a deleter.
-fn foo3(foo: u32, bar: i8) -> const * Foo;

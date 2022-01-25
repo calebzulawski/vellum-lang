@@ -9,3 +9,4 @@ lalrpop = "0.19"
 [dependencies]
 lalrpop-util = "0.19"
 codespan = "0.11"
+logos = "0.12"
