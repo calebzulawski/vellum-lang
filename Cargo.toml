@@ -1,5 +1,4 @@
 [workspace]
 members = [
     "vellum-compiler",
-    "vellum-lang",
 ]

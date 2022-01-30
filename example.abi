@@ -1,5 +1,8 @@
 /// A struct
 struct Foo {
+    /// A field
     foo: u32,
+
+    /// Another field
     bar: i8,
 }

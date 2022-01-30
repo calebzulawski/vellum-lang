@@ -66,7 +66,7 @@ pub enum Token {
         let len = lex.slice().len();
         lex.slice()[1..len-1].to_string()
     })]
-    ImportPath(String),
+    String(String),
 
     #[regex(r"[a-zA-Z][a-zA-Z_]*", |lex| lex.slice().to_string())]
     Identifier(String),

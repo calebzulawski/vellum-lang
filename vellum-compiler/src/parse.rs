@@ -7,7 +7,7 @@ mod lexer;
 
 pub use lexer::Token;
 
-lalrpop_mod!(grammar);
+lalrpop_mod!(grammar, "/parse/grammar.rs");
 
 pub fn parse_program(input: &str) -> Result<Vec<ast::Item>, ParseError<ByteIndex, Token, ()>> {
     let lexer = lexer::Lexer::new(input);

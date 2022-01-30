@@ -592,13 +592,6 @@ name = "vellum-compiler"
 version = "0.1.0"
 dependencies = [
  "clap",
- "vellum-lang",
-]
-
-[[package]]
-name = "vellum-lang"
-version = "0.1.0"
-dependencies = [
  "codespan",
  "lalrpop",
  "lalrpop-util",

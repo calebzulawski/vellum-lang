@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand};
 
 mod compile;
+mod parse;
 
 #[derive(Parser)]
 #[clap(name = "vellum")]

@@ -3,6 +3,15 @@ name = "vellum-compiler"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "vellum"
+path = "src/main.rs"
+
+[build-dependencies]
+lalrpop = "0.19"
+
 [dependencies]
-vellum-lang = { path = "../vellum-lang" }
 clap = { version = "3", features = ["derive"] }
+codespan = "0.11"
+lalrpop-util = "0.19"
+logos = "0.12"

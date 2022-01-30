@@ -1,5 +1,7 @@
 use codespan::Span;
 
+pub use super::lexer::Primitive;
+
 mod pointer;
 pub use pointer::*;
 

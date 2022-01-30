@@ -1,5 +1,5 @@
-use crate::ast::{Identifier, Import, Item, ItemType, Primitive, Pointer, PointerModifier, Struct, Type};
-use crate::lexer;
+use super::ast::{Field, Identifier, Import, Item, ItemType, Primitive, Pointer, PointerModifier, Struct, Type};
+use super::lexer;
 use codespan::{ByteIndex, Span};
 
 grammar;
@@ -21,15 +21,15 @@ extern {
         "owned" => lexer::Token::Owned,
         "mut" => lexer::Token::Mut,
         "import" => lexer::Token::Import,
-        "import-path" => lexer::Token::ImportPath(<String>),
+        "string" => lexer::Token::String(<String>),
         "identifier" => lexer::Token::Identifier(<String>),
         "comment" => lexer::Token::Comment(<String>),
         "doc-comment" => lexer::Token::DocComment(<String>),
     }
 }
 
-ImportPath: String =
-    "import-path" => <>;
+String: String =
+    "string" => <>;
 
 Comment: String =
     "comment" => <>;
@@ -61,14 +61,14 @@ Type: Type = {
     <identifier: Identifier> => Type::Identifier(identifier),
 }
 
-StructField: (Identifier, Type) =
-    <identifier: Identifier> ":" <ty: Type> "," => (identifier, ty);
+Field: Field =
+    <docs: DocComment*> <name: Identifier> ":" <ty: Type> "," => Field { docs, name, ty };
 
 Struct: Struct =
-    <l: @L> "struct" <name: Identifier> "{" <fields: StructField*> "}" <r: @R> => Struct { span: Span::new(l, r), name, fields };
+    <l: @L> "struct" <name: Identifier> "{" <fields: Field*> "}" <r: @R> => Struct { span: Span::new(l, r), name, fields };
 
 Import: Import =
-    <l: @L> "import" <path: ImportPath> <r: @R> => Import { span: Span::new(l, r), path };
+    <l: @L> "import" <path: String> <r: @R> => Import { span: Span::new(l, r), path };
 
 ItemType: ItemType = {
     <s: Struct> => ItemType::Struct(s),
