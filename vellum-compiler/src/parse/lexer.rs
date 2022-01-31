@@ -61,7 +61,7 @@ pub enum Token {
     #[token("import")]
     Import,
 
-    #[regex(r"'[^\n\r]*'", |lex| {
+    #[regex(r"'[^\n\r']*'", |lex| {
         let len = lex.slice().len();
         lex.slice()[1..len-1].to_string()
     })]
@@ -97,12 +97,8 @@ impl<'input> Iterator for Lexer<'input> {
     type Item = Result<(usize, Token, usize), ()>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.lexer.next().map(|token| {
-            Ok((
-                self.lexer.span().start,
-                token,
-                self.lexer.span().end,
-            ))
-        })
+        self.lexer
+            .next()
+            .map(|token| Ok((self.lexer.span().start, token, self.lexer.span().end)))
     }
 }

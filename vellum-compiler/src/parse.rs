@@ -114,7 +114,35 @@ impl Context {
 }
 
 pub fn parse_program(file: impl AsRef<Path>) -> Result<(Context, Vec<ast::Item>), ()> {
+    // TODO replace with iterators, with fewer allocations
+    fn handle_imports(
+        context: &mut Context,
+        mut items: Vec<ast::Item>,
+        file: &Path,
+    ) -> Result<Vec<ast::Item>, ()> {
+        let mut new_items = Vec::new();
+        for item in items.drain(..) {
+            if let ast::Item {
+                docs: _,
+                item: ast::ItemType::Import(ast::Import { location, path }),
+            } = item
+            {
+                let next_path = if let Some(parent) = file.parent() {
+                    parent.join(path)
+                } else {
+                    Path::new(&path).to_owned()
+                };
+                let next_items = context.parse_file(&next_path, Some(location))?;
+                new_items.append(&mut handle_imports(context, next_items, &next_path)?);
+            } else {
+                new_items.push(item);
+            }
+        }
+        Ok(new_items)
+    }
+
     let mut context = Context::new();
     let items = context.parse_file(file.as_ref(), None)?;
+    let items = handle_imports(&mut context, items, file.as_ref())?;
     Ok((context, items))
 }
