@@ -14,3 +14,4 @@ lalrpop = "0.19"
 clap = { version = "3", features = ["derive"] }
 lalrpop-util = "0.19"
 logos = "0.12"
+codespan-reporting = "0.11"
