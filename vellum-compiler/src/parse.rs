@@ -16,7 +16,11 @@ mod lexer;
 
 pub use lexer::Token;
 
-lalrpop_mod!(grammar, "/parse/grammar.rs");
+lalrpop_mod!(
+    #[allow(clippy::all)]
+    grammar,
+    "/parse/grammar.rs"
+);
 
 pub struct Context {
     files: SimpleFiles<String, String>,
@@ -52,7 +56,6 @@ impl Context {
                 error
             };
             self.report(&error);
-            ()
         })?;
         let file_id = self.files.add(file.display().to_string(), source);
         Ok((file_id, self.files.get(file_id).unwrap().source()))
@@ -67,48 +70,45 @@ impl Context {
         let lexer = lexer::Lexer::new(source);
         grammar::ProgramParser::new()
             .parse(file_id, lexer)
-            .map_err(|e| {
-                match e {
-                    ParseError::InvalidToken { location } => {
-                        self.report(
-                            &Diagnostic::error()
-                                .with_message("could not parse")
-                                .with_labels(vec![Label::primary(file_id, location..location)]),
-                        );
-                    }
-                    ParseError::UnrecognizedEOF { location, expected } => {
-                        let expected = expected.join(", ");
-                        self.report(
-                            &Diagnostic::error()
-                                .with_message("reached end of file")
-                                .with_labels(vec![Label::primary(file_id, location..location)])
-                                .with_notes(vec![format!("expected one of: {}", expected)]),
-                        );
-                    }
-                    ParseError::UnrecognizedToken {
-                        token: (left, _, right),
-                        expected,
-                    } => {
-                        let expected = expected.join(", ");
-                        self.report(
-                            &Diagnostic::error()
-                                .with_message("unexpected token")
-                                .with_labels(vec![Label::primary(file_id, left..right)])
-                                .with_notes(vec![format!("expected one of: {}", expected)]),
-                        );
-                    }
-                    ParseError::ExtraToken {
-                        token: (left, _, right),
-                    } => {
-                        self.report(
-                            &Diagnostic::error()
-                                .with_message("unexpected token")
-                                .with_labels(vec![Label::primary(file_id, left..right)]),
-                        );
-                    }
-                    e => panic!("unexpected lexer error: {:?}", e),
+            .map_err(|e| match e {
+                ParseError::InvalidToken { location } => {
+                    self.report(
+                        &Diagnostic::error()
+                            .with_message("could not parse")
+                            .with_labels(vec![Label::primary(file_id, location..location)]),
+                    );
                 }
-                ()
+                ParseError::UnrecognizedEOF { location, expected } => {
+                    let expected = expected.join(", ");
+                    self.report(
+                        &Diagnostic::error()
+                            .with_message("reached end of file")
+                            .with_labels(vec![Label::primary(file_id, location..location)])
+                            .with_notes(vec![format!("expected one of: {}", expected)]),
+                    );
+                }
+                ParseError::UnrecognizedToken {
+                    token: (left, _, right),
+                    expected,
+                } => {
+                    let expected = expected.join(", ");
+                    self.report(
+                        &Diagnostic::error()
+                            .with_message("unexpected token")
+                            .with_labels(vec![Label::primary(file_id, left..right)])
+                            .with_notes(vec![format!("expected one of: {}", expected)]),
+                    );
+                }
+                ParseError::ExtraToken {
+                    token: (left, _, right),
+                } => {
+                    self.report(
+                        &Diagnostic::error()
+                            .with_message("unexpected token")
+                            .with_labels(vec![Label::primary(file_id, left..right)]),
+                    );
+                }
+                e => panic!("unexpected lexer error: {:?}", e),
             })
     }
 }
