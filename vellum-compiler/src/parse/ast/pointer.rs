@@ -1,5 +1,4 @@
-use super::Type;
-use codespan::Span;
+use super::{Location, Type};
 
 pub enum PointerModifier {
     Const,
@@ -8,7 +7,7 @@ pub enum PointerModifier {
 }
 
 pub struct Pointer {
-    pub span: Span,
+    pub location: Location,
     pub modifier: PointerModifier,
     pub ty: Box<Type>,
 }

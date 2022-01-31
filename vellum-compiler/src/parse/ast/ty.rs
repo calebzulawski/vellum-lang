@@ -1,5 +1,4 @@
-use super::{Identifier, Pointer};
-use codespan::Span;
+use super::{Identifier, Location, Pointer};
 
 pub use super::Primitive;
 
@@ -10,13 +9,16 @@ pub struct Field {
 }
 
 pub struct Struct {
-    pub span: Span,
+    pub location: Location,
     pub name: Identifier,
     pub fields: Vec<Field>,
 }
 
 pub enum Type {
-    Primitive { span: Span, primitive: Primitive },
+    Primitive {
+        location: Location,
+        primitive: Primitive,
+    },
     Pointer(Pointer),
     Identifier(Identifier),
 }

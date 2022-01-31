@@ -1,11 +1,10 @@
-use super::ast::{Field, Identifier, Import, Item, ItemType, Primitive, Pointer, PointerModifier, Struct, Type};
+use super::ast::{Field, Identifier, Import, Item, ItemType, Location, Primitive, Pointer, PointerModifier, Struct, Type};
 use super::lexer;
-use codespan::{ByteIndex, Span};
 
-grammar;
+grammar(file_id: usize);
 
 extern {
-    type Location = ByteIndex;
+    type Location = usize;
     type Error = ();
 
     enum lexer::Token {
@@ -44,7 +43,7 @@ IdentifierString: String =
     "identifier" => <>;
 
 Identifier: Identifier =
-    <l: @L> <identifier: IdentifierString> <r: @R> => Identifier { span: Span::new(l, r), identifier };
+    <l: @L> <identifier: IdentifierString> <r: @R> => Identifier { location: Location::new(file_id, l..r), identifier };
 
 PointerModifier: PointerModifier = {
     "const" => PointerModifier::Const,
@@ -53,10 +52,10 @@ PointerModifier: PointerModifier = {
 }
 
 Pointer: Pointer =
-    <l: @L> <modifier: PointerModifier> "*" <ty: Type> <r: @R> => Pointer { span: Span::new(l, r), modifier, ty: Box::new(ty) };
+    <l: @L> <modifier: PointerModifier> "*" <ty: Type> <r: @R> => Pointer { location: Location::new(file_id, l..r), modifier, ty: Box::new(ty) };
 
 Type: Type = {
-    <l: @L> <primitive: Primitive> <r: @R> => Type::Primitive { span: Span::new(l, r), primitive },
+    <l: @L> <primitive: Primitive> <r: @R> => Type::Primitive { location: Location::new(file_id, l..r), primitive },
     <pointer: Pointer> => Type::Pointer(pointer),
     <identifier: Identifier> => Type::Identifier(identifier),
 }
@@ -65,10 +64,10 @@ Field: Field =
     <docs: DocComment*> <name: Identifier> ":" <ty: Type> "," => Field { docs, name, ty };
 
 Struct: Struct =
-    <l: @L> "struct" <name: Identifier> "{" <fields: Field*> "}" <r: @R> => Struct { span: Span::new(l, r), name, fields };
+    <l: @L> "struct" <name: Identifier> "{" <fields: Field*> "}" <r: @R> => Struct { location: Location::new(file_id, l..r), name, fields };
 
 Import: Import =
-    <l: @L> "import" <path: String> <r: @R> => Import { span: Span::new(l, r), path };
+    <l: @L> "import" <path: String> <r: @R> => Import { location: Location::new(file_id, l..r), path };
 
 ItemType: ItemType = {
     <s: Struct> => ItemType::Struct(s),

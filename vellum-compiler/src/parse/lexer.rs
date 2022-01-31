@@ -1,4 +1,3 @@
-use codespan::ByteIndex;
 use logos::Logos;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -95,14 +94,14 @@ impl<'input> Lexer<'input> {
 }
 
 impl<'input> Iterator for Lexer<'input> {
-    type Item = Result<(ByteIndex, Token, ByteIndex), ()>;
+    type Item = Result<(usize, Token, usize), ()>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.lexer.next().map(|token| {
             Ok((
-                (self.lexer.span().start as u32).into(),
+                self.lexer.span().start,
                 token,
-                (self.lexer.span().end as u32).into(),
+                self.lexer.span().end,
             ))
         })
     }

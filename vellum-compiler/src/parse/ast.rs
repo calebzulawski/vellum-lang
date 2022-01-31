@@ -1,6 +1,5 @@
-use codespan::Span;
-
 pub use super::lexer::Primitive;
+use core::ops::Range;
 
 mod pointer;
 pub use pointer::*;
@@ -8,8 +7,19 @@ pub use pointer::*;
 mod ty;
 pub use ty::*;
 
+pub struct Location {
+    pub file_id: usize,
+    pub span: Range<usize>,
+}
+
+impl Location {
+    pub fn new(file_id: usize, span: Range<usize>) -> Self {
+        Self { file_id, span }
+    }
+}
+
 pub struct Identifier {
-    pub span: Span,
+    pub location: Location,
     pub identifier: String,
 }
 
@@ -19,7 +29,7 @@ pub struct Item {
 }
 
 pub struct Import {
-    pub span: Span,
+    pub location: Location,
     pub path: String,
 }
 
