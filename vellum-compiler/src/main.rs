@@ -2,6 +2,7 @@ use clap::{Parser, Subcommand};
 
 mod compile;
 mod parse;
+mod type_check;
 
 #[derive(Parser)]
 #[clap(name = "vellum")]

@@ -6,5 +6,6 @@ pub struct Compile {
 }
 
 pub fn compile(compile: Compile) {
-    crate::parse::parse_program(compile.file).unwrap();
+    let (mut context, file) = crate::parse::parse_program(compile.file).unwrap();
+    let _ = crate::type_check::type_check(&mut context, file).unwrap();
 }

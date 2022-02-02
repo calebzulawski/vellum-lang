@@ -32,12 +32,6 @@ pub struct Item {
 }
 
 #[derive(Clone, Debug)]
-pub struct ResolvedImport {
-    pub canonical_path: PathBuf,
-    pub contents: Vec<Item>,
-}
-
-#[derive(Clone, Debug)]
 pub struct Import {
     pub location: Location,
     pub path: String,
