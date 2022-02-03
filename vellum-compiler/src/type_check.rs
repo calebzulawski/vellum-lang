@@ -2,6 +2,8 @@ use crate::parse::{ast, Context};
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use std::collections::HashMap;
 
+mod valid;
+
 fn name_of_item(item: &ast::Item) -> ast::Identifier {
     match &item.item {
         ast::ItemType::Struct(s) => s.name.clone(),
@@ -45,7 +47,8 @@ fn flatten(context: &mut Context, file: ast::File) -> Result<HashMap<String, ast
 }
 
 pub fn type_check(context: &mut Context, file: ast::File) -> Result<Program, ()> {
-    let _ = flatten(context, file)?;
+    let items = flatten(context, file)?;
+    valid::check(context, &items)?;
     Ok(Program {
         structs: Vec::new(),
     })

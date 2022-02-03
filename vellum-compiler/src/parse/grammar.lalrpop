@@ -63,8 +63,13 @@ Type: Type = {
 Field: Field =
     <docs: DocComment*> <name: Identifier> ":" <ty: Type> "," => Field { docs, name, ty };
 
+StructContents: Option<Vec<Field>> = {
+    "{" <fields: Field*> "}" => Some(fields),
+    ";" => None,
+}
+
 Struct: Struct =
-    <l: @L> "struct" <name: Identifier> "{" <fields: Field*> "}" <r: @R> => Struct { location: Location::new(file_id, l..r), name, fields };
+    <l: @L> "struct" <name: Identifier> <fields: StructContents> <r: @R> => Struct { location: Location::new(file_id, l..r), name, fields };
 
 Import: Import =
     <l: @L> "import" <path: String> <r: @R> => Import { location: Location::new(file_id, l..r), path, resolved: None };

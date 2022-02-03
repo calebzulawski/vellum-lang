@@ -13,7 +13,7 @@ pub struct Field {
 pub struct Struct {
     pub location: Location,
     pub name: Identifier,
-    pub fields: Vec<Field>,
+    pub fields: Option<Vec<Field>>,
 }
 
 #[derive(Clone, Debug)]
