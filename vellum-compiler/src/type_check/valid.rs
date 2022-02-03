@@ -6,7 +6,7 @@ use std::collections::HashMap;
 ///
 /// Abstract types can be referenced only by pointer.
 pub fn check(context: &mut Context, items: &HashMap<String, ast::Item>) -> Result<(), ()> {
-    for (_, item) in items {
+    for item in items.values() {
         match &item.item {
             ast::ItemType::Import(_) => unimplemented!(),
             ast::ItemType::Struct(s) => {

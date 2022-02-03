@@ -64,7 +64,7 @@ impl Context {
                 };
                 context.report(&error);
             };
-        let file = std::fs::canonicalize(file).map_err(|e| handle_err(self, &file, location, e))?;
+        let file = std::fs::canonicalize(file).map_err(|e| handle_err(self, file, location, e))?;
         let source =
             std::fs::read_to_string(&file).map_err(|e| handle_err(self, &file, location, e))?;
         let file_id = self.files.add(file.display().to_string(), source);
