@@ -1,8 +1,17 @@
 /// A struct
 struct Foo {
-    /// A field
+    /// A primitive field
     foo: u32,
 
-    /// Another field
-    bar: i8,
+    /// A field containing another struct
+    bar: Bar,
+
+    /// A field containing an abstract type
+    baz: const * Baz,
 }
+
+struct Bar {
+    bar: owned * Baz,
+}
+
+struct Baz;

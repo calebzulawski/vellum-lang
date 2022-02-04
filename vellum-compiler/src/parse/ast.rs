@@ -31,6 +31,15 @@ pub struct Item {
     pub item: ItemType,
 }
 
+impl Item {
+    pub fn location(&self) -> &Location {
+        match &self.item {
+            ItemType::Import(i) => &i.location,
+            ItemType::Struct(s) => &s.location,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Import {
     pub location: Location,
