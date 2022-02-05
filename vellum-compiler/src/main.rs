@@ -20,6 +20,12 @@ enum Action {
 }
 
 fn main() {
+    if let Err(()) = main_impl() {
+        std::process::exit(1);
+    }
+}
+
+fn main_impl() -> Result<(), ()> {
     let args = Args::parse();
 
     match args.action {
