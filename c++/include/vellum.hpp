@@ -1,2 +1,2 @@
-#include "detail/closure.hpp"
-#include "detail/owned_ptr.hpp"
+#include "vellum/closure.hpp"
+#include "vellum/owned_ptr.hpp"

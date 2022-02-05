@@ -3,18 +3,18 @@
 namespace vellum {
 
 namespace detail {
-void default_deleter<T>(T *ptr) { delete T; }
+template <typename T> void default_deleter(T *ptr) noexcept { delete ptr; }
 } // namespace detail
 
-template <typename T> class owned_ptr<T> {
+template <typename T> class owned_ptr {
   T *ptr;
-  void(deleter *)(T *);
+  void (*deleter)(T *);
 
 public:
-  owned_ptr(unique_ptr<T> ptr)
-      : ptr(ptr.release()), deleter(default_deleter<T>) {}
+  owned_ptr(std::unique_ptr<T> ptr)
+      : ptr(ptr.release()), deleter(detail::default_deleter<T>) {}
 
-  owned_ptr(unique_ptr<T, void (*)(T *)> ptr)
+  owned_ptr(std::unique_ptr<T, void (*)(T *)> ptr)
       : deleter(ptr.get_deleter()), ptr(ptr.release()) {}
 
   owned_ptr() : ptr(nullptr), deleter(nullptr) {}
@@ -34,6 +34,6 @@ public:
   }
 
   operator std::shared_ptr<T>() && { return std::shared_ptr<T>(ptr, deleter); }
-}
+};
 
 } // namespace vellum
