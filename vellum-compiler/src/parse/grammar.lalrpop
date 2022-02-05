@@ -31,10 +31,10 @@ String: String =
     "string" => <>;
 
 Comment: String =
-    "comment" => <>;
+    "comment" => <>.trim().trim_start_matches("//").to_string();
 
 DocComment: String =
-    "doc-comment" => <>;    
+    "doc-comment" => <>.trim().trim_start_matches("///").to_string();
 
 Primitive: Primitive =
     "primitive" => <>;

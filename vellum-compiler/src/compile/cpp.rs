@@ -53,10 +53,22 @@ fn compile_impl(items: Vec<ast::Item>, output_file: &Path) -> Result<(), Error> 
     Ok(())
 }
 
+fn write_docs(file: &mut File, prefix: &str, docs: &[String]) -> Result<(), Error> {
+    if !docs.is_empty() {
+        writeln!(file, "{}/*!", prefix)?;
+        for doc in docs {
+            writeln!(file, "{} *!{}", prefix, doc)?;
+        }
+        writeln!(file, "{} */", prefix)?;
+    }
+    Ok(())
+}
+
 fn forward_declarations(items: &[ast::Item], file: &mut File) -> Result<(), Error> {
     for item in items {
         if let ast::ItemType::Struct(s) = &item.item {
-            writeln!(file, "struct {};", s.name.identifier)?
+            write_docs(file, "", &item.docs)?;
+            writeln!(file, "struct {};", s.name.identifier)?;
         }
     }
     writeln!(file)?;
@@ -71,8 +83,10 @@ fn struct_definitions(items: &[ast::Item], file: &mut File) -> Result<(), Error>
             ..
         }) = &item.item
         {
+            write_docs(file, "", &item.docs)?;
             writeln!(file, "struct {} {{", name.identifier)?;
             for field in fields {
+                write_docs(file, "  ", &field.docs)?;
                 writeln!(
                     file,
                     "  {} {};",
