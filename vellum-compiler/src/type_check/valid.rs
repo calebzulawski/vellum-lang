@@ -76,6 +76,13 @@ fn check_type(
                 primitive: _,
             } => Ok(()),
             ast::Type::Pointer(p) => check_type(context, items, &p.ty, record_dependency, false),
+            ast::Type::FunctionPointer(f) => {
+                check_type(context, items, &f.returns, record_dependency, true)?;
+                for arg in &f.args {
+                    check_type(context, items, &arg.1, record_dependency, true)?;
+                }
+                Ok(())
+            }
             ast::Type::Identifier(ident) => {
                 if let Some(item) = items.get(&ident.identifier) {
                     match &item.item {

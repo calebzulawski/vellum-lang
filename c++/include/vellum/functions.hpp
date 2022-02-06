@@ -2,6 +2,22 @@
 
 namespace vellum {
 
+// 
+// Regular function pointer
+//
+namespace detail {
+template <typename> struct function_helper;
+template <typename Returns, typename... Args>
+struct function_helper<Returns(Args...)> {
+  using type = Returns (*)(Args...);
+};
+} // namespace detail
+template <typename T> using function = typename detail::function_helper<T>::type;
+
+//
+// Closures
+//
+
 namespace detail {
 
 // invoke a std::function

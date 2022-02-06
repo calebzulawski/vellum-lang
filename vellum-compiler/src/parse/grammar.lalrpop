@@ -1,4 +1,4 @@
-use super::ast::{Field, Identifier, Import, Item, ItemType, Location, Primitive, Pointer, PointerModifier, Struct, Type};
+use super::ast::{Field, FunctionType, FunctionPointer, Identifier, Import, Item, ItemType, Location, Primitive, Pointer, PointerModifier, Struct, Type};
 use super::lexer;
 
 grammar(file_id: usize);
@@ -10,16 +10,21 @@ extern {
     enum lexer::Token {
         "{" => lexer::Token::LeftBracket,
         "}" => lexer::Token::RightBracket,
+        "(" => lexer::Token::LeftParen,
+        ")" => lexer::Token::RightParen,
         ":" => lexer::Token::Colon,
         "," => lexer::Token::Comma,
         ";" => lexer::Token::Semicolon,
         "*" => lexer::Token::Asterisk,
+        "->" => lexer::Token::Arrow,
         "primitive" => lexer::Token::Primitive(<Primitive>),
         "struct" => lexer::Token::Struct,
         "const" => lexer::Token::Const,
         "owned" => lexer::Token::Owned,
         "mut" => lexer::Token::Mut,
         "import" => lexer::Token::Import,
+        "function" => lexer::Token::Function,
+        "closure" => lexer::Token::Closure,
         "string" => lexer::Token::String(<String>),
         "identifier" => lexer::Token::Identifier(<String>),
         "comment" => lexer::Token::Comment(<String>),
@@ -54,11 +59,38 @@ PointerModifier: PointerModifier = {
 Pointer: Pointer =
     <l: @L> <modifier: PointerModifier> "*" <ty: Type> <r: @R> => Pointer { location: Location::new(file_id, l..r), modifier, ty: Box::new(ty) };
 
+FunctionType: FunctionType = {
+    "function" => FunctionType::Function,
+    "closure" => FunctionType::Closure,
+}
+
+FunctionArg: (Identifier, Type) =
+    <ident: Identifier> ":" <ty: Type> => (ident, ty);
+
+FunctionPointer: FunctionPointer =
+    <l: @L> <fn_ty: FunctionType> "(" <args: Comma<FunctionArg>> ")" "->" <returns: Type> <r: @R> => FunctionPointer {
+        location: Location::new(file_id, l..r),
+        fn_ty,
+        args,
+        returns: Box::new(returns)
+    };
+
 Type: Type = {
     <l: @L> <primitive: Primitive> <r: @R> => Type::Primitive { location: Location::new(file_id, l..r), primitive },
     <pointer: Pointer> => Type::Pointer(pointer),
     <identifier: Identifier> => Type::Identifier(identifier),
+    <fn_pointer: FunctionPointer> => Type::FunctionPointer(fn_pointer),
 }
+
+Comma<T>: Vec<T> = {
+    <mut v:(<T> ",")*> <e:T?> => match e {
+        None => v,
+        Some(e) => {
+            v.push(e);
+            v
+        }
+    }
+};
 
 Field: Field =
     <docs: DocComment*> <name: Identifier> ":" <ty: Type> "," => Field { docs, name, ty };

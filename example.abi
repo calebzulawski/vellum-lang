@@ -15,3 +15,8 @@ struct Bar {
 }
 
 struct Baz;
+
+struct Functions {
+    a: function(foo: Foo) -> owned * Baz,
+    b: closure(foo: Foo) -> const * Baz,
+}

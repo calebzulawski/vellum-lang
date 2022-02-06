@@ -132,6 +132,25 @@ impl std::fmt::Display for DisplayType<'_> {
                     write!(f, "{}{} *", DisplayType(p.ty.as_ref()), modifier)?;
                 }
             }
+            ast::Type::FunctionPointer(ast::FunctionPointer {
+                fn_ty,
+                args,
+                returns,
+                ..
+            }) => {
+                let fn_ty_name = match fn_ty {
+                    ast::FunctionType::Function => "function",
+                    ast::FunctionType::Closure => "closure",
+                };
+                write!(f, "vellum::{}<{} (", fn_ty_name, DisplayType(returns.as_ref()))?;
+                if !args.is_empty() {
+                    for arg in args.iter().take(args.len() - 1) {
+                        write!(f, "{}, ", DisplayType(&arg.1))?;
+                    }
+                    write!(f, "{}", DisplayType(&args.last().unwrap().1))?;
+                }
+                write!(f, ")>")?;
+            }
             ast::Type::Identifier(i) => write!(f, "{}", i.identifier)?,
         }
         Ok(())

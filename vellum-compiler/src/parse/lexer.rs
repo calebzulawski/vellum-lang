@@ -22,6 +22,12 @@ pub enum Token {
     #[token("}")]
     RightBracket,
 
+    #[token("(")]
+    LeftParen,
+
+    #[token(")")]
+    RightParen,
+
     #[token(":")]
     Colon,
 
@@ -60,6 +66,15 @@ pub enum Token {
 
     #[token("import")]
     Import,
+
+    #[token("function")]
+    Function,
+
+    #[token("closure")]
+    Closure,
+
+    #[token("->")]
+    Arrow,
 
     #[regex(r"'[^\n\r']*'", |lex| {
         let len = lex.slice().len();

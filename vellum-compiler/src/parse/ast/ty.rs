@@ -16,6 +16,20 @@ pub struct Struct {
     pub fields: Option<Vec<Field>>,
 }
 
+#[derive(Copy, Clone, Debug)]
+pub enum FunctionType {
+    Function,
+    Closure,
+}
+
+#[derive(Clone, Debug)]
+pub struct FunctionPointer {
+    pub location: Location,
+    pub fn_ty: FunctionType,
+    pub args: Vec<(Identifier, Type)>,
+    pub returns: Box<Type>,
+}
+
 #[derive(Clone, Debug)]
 pub enum Type {
     Primitive {
@@ -23,5 +37,6 @@ pub enum Type {
         primitive: Primitive,
     },
     Pointer(Pointer),
+    FunctionPointer(FunctionPointer),
     Identifier(Identifier),
 }
