@@ -93,10 +93,10 @@ Comma<T>: Vec<T> = {
 };
 
 Field: Field =
-    <docs: DocComment*> <name: Identifier> ":" <ty: Type> "," => Field { docs, name, ty };
+    <docs: DocComment*> <name: Identifier> ":" <ty: Type> => Field { docs, name, ty };
 
 StructContents: Option<Vec<Field>> = {
-    "{" <fields: Field*> "}" => Some(fields),
+    "{" <fields: Comma<Field>> "}" => Some(fields),
     ";" => None,
 }
 
