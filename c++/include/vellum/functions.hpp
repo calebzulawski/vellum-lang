@@ -1,4 +1,5 @@
 #include <functional>
+#include <type_traits>
 
 namespace vellum {
 
@@ -76,5 +77,8 @@ public:
   closure<Returns(Args...)> &operator=(const closure &) = delete;
   closure<Returns(Args...)> &operator=(closure &&) = default;
 };
+
+// sanity check
+static_assert(std::is_standard_layout<closure<int(int)>>::value);
 
 } // namespace vellum

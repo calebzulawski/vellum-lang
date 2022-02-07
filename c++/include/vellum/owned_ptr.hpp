@@ -1,4 +1,5 @@
 #include <memory>
+#include <type_traits>
 
 namespace vellum {
 
@@ -35,5 +36,8 @@ public:
 
   operator std::shared_ptr<T>() && { return std::shared_ptr<T>(ptr, deleter); }
 };
+
+// sanity check
+static_assert(std::is_standard_layout<owned_ptr<int>>::value);
 
 } // namespace vellum
