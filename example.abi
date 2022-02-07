@@ -20,3 +20,6 @@ struct Functions {
     a: function(foo: Foo) -> owned * Baz,
     b: closure(foo: Foo) -> const * Baz,
 }
+
+/// A function
+function foo(foo: Foo) -> owned * Baz;

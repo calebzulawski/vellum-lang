@@ -36,8 +36,17 @@ impl Item {
         match &self.item {
             ItemType::Import(i) => &i.location,
             ItemType::Struct(s) => &s.location,
+            ItemType::Function(f) => &f.location,
         }
     }
+}
+
+#[derive(Clone, Debug)]
+pub struct Function {
+    pub location: Location,
+    pub name: Identifier,
+    pub args: Vec<(Identifier, Type)>,
+    pub returns: Box<Type>,
 }
 
 #[derive(Clone, Debug)]
@@ -51,6 +60,7 @@ pub struct Import {
 pub enum ItemType {
     Import(Import),
     Struct(Struct),
+    Function(Function),
 }
 
 #[derive(Clone, Debug)]

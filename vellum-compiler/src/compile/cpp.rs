@@ -50,6 +50,8 @@ fn compile_impl(items: Vec<ast::Item>, output_file: &Path) -> Result<(), Error> 
 
     struct_definitions(&items, &mut file)?;
 
+    functions(&items, &mut file)?;
+
     Ok(())
 }
 
@@ -100,6 +102,32 @@ fn struct_definitions(items: &[ast::Item], file: &mut File) -> Result<(), Error>
     Ok(())
 }
 
+fn functions(items: &[ast::Item], file: &mut File) -> Result<(), Error> {
+    writeln!(file, "extern \"C\" {{\n")?;
+    for item in items {
+        if let ast::ItemType::Function(ast::Function {
+            name,
+            args,
+            returns,
+            ..
+        }) = &item.item
+        {
+            write_docs(file, "", &item.docs)?;
+            write!(file, "{} {}(", DisplayType(&returns), name.identifier)?;
+            if !args.is_empty() {
+                for arg in args.iter().take(args.len() - 1) {
+                    write!(file, "{} {}, ", DisplayType(&arg.1), arg.0.identifier)?;
+                }
+                let last = args.last().unwrap();
+                write!(file, "{} {}", DisplayType(&last.1), last.0.identifier)?;
+            }
+            writeln!(file, ") noexcept;\n")?;
+        }
+    }
+    writeln!(file, "}}")?;
+    Ok(())
+}
+
 struct DisplayType<'a>(&'a ast::Type);
 
 impl std::fmt::Display for DisplayType<'_> {
@@ -142,7 +170,12 @@ impl std::fmt::Display for DisplayType<'_> {
                     ast::FunctionType::Function => "function",
                     ast::FunctionType::Closure => "closure",
                 };
-                write!(f, "vellum::{}<{} (", fn_ty_name, DisplayType(returns.as_ref()))?;
+                write!(
+                    f,
+                    "vellum::{}<{} (",
+                    fn_ty_name,
+                    DisplayType(returns.as_ref())
+                )?;
                 if !args.is_empty() {
                     for arg in args.iter().take(args.len() - 1) {
                         write!(f, "{}, ", DisplayType(&arg.1))?;

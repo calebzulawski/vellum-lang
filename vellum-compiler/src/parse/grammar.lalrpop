@@ -1,4 +1,4 @@
-use super::ast::{Field, FunctionType, FunctionPointer, Identifier, Import, Item, ItemType, Location, Primitive, Pointer, PointerModifier, Struct, Type};
+use super::ast::{Field, Function, FunctionType, FunctionPointer, Identifier, Import, Item, ItemType, Location, Primitive, Pointer, PointerModifier, Struct, Type};
 use super::lexer;
 
 grammar(file_id: usize);
@@ -106,9 +106,18 @@ Struct: Struct =
 Import: Import =
     <l: @L> "import" <path: String> <r: @R> => Import { location: Location::new(file_id, l..r), path, resolved: None };
 
+Function: Function =
+    <l: @L> "function" <name: Identifier> "(" <args: Comma<FunctionArg>> ")" "->" <returns: Type> ";" <r: @R> => Function {
+        location: Location::new(file_id, l..r),
+        name,
+        args,
+        returns: Box::new(returns),
+    };
+
 ItemType: ItemType = {
     <s: Struct> => ItemType::Struct(s),
     <i: Import> => ItemType::Import(i),
+    <f: Function> => ItemType::Function(f),
 }
 
 Item: Item =

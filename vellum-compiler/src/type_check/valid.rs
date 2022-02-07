@@ -52,9 +52,49 @@ pub fn check(
                     dependencies.insert(name.clone(), these_dependencies);
                 }
             }
+            ast::ItemType::Function(f) => {
+                let mut these_dependencies = Vec::new();
+                check_function_args(context, items, &f.args, &mut these_dependencies)?;
+                check_type(context, items, &f.returns, &mut these_dependencies)?;
+                dependencies.insert(name.clone(), these_dependencies);
+            }
         }
     }
     Ok(dependencies)
+}
+
+fn check_function_args(
+    context: &mut Context,
+    items: &HashMap<String, ast::Item>,
+    args: &[(ast::Identifier, ast::Type)],
+    record_dependency: &mut Vec<String>,
+) -> Result<(), ()> {
+    // Check the following:
+    // * Args must have unique names
+    // * Args must be concrete types
+    let mut visited_args = HashMap::new();
+    for (name, ty) in args {
+        // Check that the field name is unique
+        if let Some(existing_field) = visited_args.insert(&name.identifier, name) {
+            context.report(
+                &Diagnostic::error()
+                    .with_message("argument name must be unique")
+                    .with_labels(vec![
+                        Label::primary(name.location.file_id, name.location.span.clone())
+                            .with_message("duplicate argument name"),
+                        Label::secondary(
+                            existing_field.location.file_id,
+                            existing_field.location.span.clone(),
+                        )
+                        .with_message("first used here"),
+                    ]),
+            );
+        }
+
+        // Check that the field is concrete
+        check_type(context, items, &ty, record_dependency)?;
+    }
+    Ok(())
 }
 
 fn check_type(
@@ -77,10 +117,8 @@ fn check_type(
             } => Ok(()),
             ast::Type::Pointer(p) => check_type(context, items, &p.ty, record_dependency, false),
             ast::Type::FunctionPointer(f) => {
+                check_function_args(context, items, &f.args, record_dependency)?;
                 check_type(context, items, &f.returns, record_dependency, true)?;
-                for arg in &f.args {
-                    check_type(context, items, &arg.1, record_dependency, true)?;
-                }
                 Ok(())
             }
             ast::Type::Identifier(ident) => {
@@ -108,6 +146,25 @@ fn check_type(
                             } else {
                                 Ok(())
                             }
+                        }
+                        ast::ItemType::Function(f) => {
+                            context.report(
+                                &Diagnostic::error()
+                                    .with_message("expected type")
+                                    .with_labels(vec![
+                                        Label::primary(
+                                            ident.location.file_id,
+                                            ident.location.span.clone(),
+                                        )
+                                        .with_message("got a function"),
+                                        Label::secondary(
+                                            f.location.file_id,
+                                            f.location.span.clone(),
+                                        )
+                                        .with_message("defined here"),
+                                    ]),
+                            );
+                            Err(())
                         }
                     }
                 } else {

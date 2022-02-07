@@ -8,6 +8,7 @@ mod valid;
 fn name_of_item(item: &ast::Item) -> ast::Identifier {
     match &item.item {
         ast::ItemType::Struct(s) => s.name.clone(),
+        ast::ItemType::Function(f) => f.name.clone(),
         ast::ItemType::Import(_) => unimplemented!(),
     }
 }
