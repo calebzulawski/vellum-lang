@@ -1,14 +1,20 @@
-use super::Compile;
+use super::{Compile, Items};
 use crate::parse::{ast, Context};
+use askama::Template;
 use codespan_reporting::diagnostic::Diagnostic;
-use indoc::writedoc;
 use std::{
-    fs::{File, OpenOptions},
+    fs::OpenOptions,
     io::{Error, Write},
     path::Path,
 };
 
-pub fn compile(context: &mut Context, options: Compile, items: Vec<ast::Item>) -> Result<(), ()> {
+#[derive(Template)]
+#[template(path = "c++/compile.hpp")]
+struct CppTemplate {
+    items: Items,
+}
+
+pub(super) fn compile(context: &mut Context, options: Compile, items: Items) -> Result<(), ()> {
     let file_name = Path::new(&options.file)
         .with_extension("hpp")
         .file_name()
@@ -31,100 +37,14 @@ pub fn compile(context: &mut Context, options: Compile, items: Vec<ast::Item>) -
     }
 }
 
-fn compile_impl(items: Vec<ast::Item>, output_file: &Path) -> Result<(), Error> {
+fn compile_impl(items: Items, output_file: &Path) -> Result<(), Error> {
     let mut file = OpenOptions::new()
         .write(true)
         .create_new(true)
         .open(output_file)?;
-    writedoc!(
-        file,
-        r##"
-        #include <cstdint>
-        #include <cstddef>
-        #include <vellum.hpp>
 
-        "##
-    )?;
-
-    forward_declarations(&items, &mut file)?;
-
-    struct_definitions(&items, &mut file)?;
-
-    functions(&items, &mut file)?;
-
-    Ok(())
-}
-
-fn write_docs(file: &mut File, prefix: &str, docs: &[String]) -> Result<(), Error> {
-    if !docs.is_empty() {
-        writeln!(file, "{}/*!", prefix)?;
-        for doc in docs {
-            writeln!(file, "{} *!{}", prefix, doc)?;
-        }
-        writeln!(file, "{} */", prefix)?;
-    }
-    Ok(())
-}
-
-fn forward_declarations(items: &[ast::Item], file: &mut File) -> Result<(), Error> {
-    for item in items {
-        if let ast::ItemType::Struct(s) = &item.item {
-            write_docs(file, "", &item.docs)?;
-            writeln!(file, "struct {};", s.name.identifier)?;
-        }
-    }
-    writeln!(file)?;
-    Ok(())
-}
-
-fn struct_definitions(items: &[ast::Item], file: &mut File) -> Result<(), Error> {
-    for item in items {
-        if let ast::ItemType::Struct(ast::Struct {
-            name,
-            fields: Some(fields),
-            ..
-        }) = &item.item
-        {
-            write_docs(file, "", &item.docs)?;
-            writeln!(file, "struct {} {{", name.identifier)?;
-            for field in fields {
-                write_docs(file, "  ", &field.docs)?;
-                writeln!(
-                    file,
-                    "  {} {};",
-                    DisplayType(&field.ty),
-                    field.name.identifier
-                )?;
-            }
-            writeln!(file, "}};\n")?;
-        }
-    }
-    Ok(())
-}
-
-fn functions(items: &[ast::Item], file: &mut File) -> Result<(), Error> {
-    writeln!(file, "extern \"C\" {{\n")?;
-    for item in items {
-        if let ast::ItemType::Function(ast::Function {
-            name,
-            args,
-            returns,
-            ..
-        }) = &item.item
-        {
-            write_docs(file, "", &item.docs)?;
-            write!(file, "{} {}(", DisplayType(&returns), name.identifier)?;
-            if !args.is_empty() {
-                for arg in args.iter().take(args.len() - 1) {
-                    write!(file, "{} {}, ", DisplayType(&arg.1), arg.0.identifier)?;
-                }
-                let last = args.last().unwrap();
-                write!(file, "{} {}", DisplayType(&last.1), last.0.identifier)?;
-            }
-            writeln!(file, ") noexcept;\n")?;
-        }
-    }
-    writeln!(file, "}}")?;
+    let template = CppTemplate { items };
+    write!(file, "{}", template.render().unwrap())?;
     Ok(())
 }
 
@@ -187,5 +107,13 @@ impl std::fmt::Display for DisplayType<'_> {
             ast::Type::Identifier(i) => write!(f, "{}", i.identifier)?,
         }
         Ok(())
+    }
+}
+
+mod filters {
+    use super::*;
+
+    pub fn ty(ty: &ast::Type) -> askama::Result<String> {
+        Ok(DisplayType(ty).to_string())
     }
 }

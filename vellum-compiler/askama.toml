@@ -1,0 +1,4 @@
+[general]
+[[escaper]]
+path = "::askama::Text"
+extensions = ["hpp"]

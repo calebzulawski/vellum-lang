@@ -23,3 +23,6 @@ struct Functions {
 
 /// A function
 function foo(foo: Foo) -> owned * Baz;
+
+/// Another function
+function bar(foo: Foo, bar: Bar) -> owned * Baz;
