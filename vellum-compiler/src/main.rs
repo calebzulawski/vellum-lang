@@ -2,6 +2,7 @@ use clap::{Parser, Subcommand};
 
 mod compile;
 mod parse;
+mod symbols;
 mod type_check;
 
 #[derive(Parser)]
@@ -17,6 +18,7 @@ struct Args {
 #[derive(Subcommand)]
 enum Action {
     Compile(compile::Compile),
+    Symbols(symbols::Symbols),
 }
 
 fn main() {
@@ -30,5 +32,6 @@ fn main_impl() -> Result<(), ()> {
 
     match args.action {
         Action::Compile(compile) => compile::compile(compile),
+        Action::Symbols(symbols) => symbols::symbols(symbols),
     }
 }
