@@ -69,16 +69,21 @@ impl std::fmt::Display for DisplayType<'_> {
                 write!(f, "{}", s)?;
             }
             ast::Type::Pointer(p) => {
-                if let ast::PointerModifier::Owned = p.modifier {
-                    write!(f, "vellum::owned_ptr<{}>", DisplayType(p.ty.as_ref()))?;
-                } else {
-                    let modifier = match p.modifier {
-                        ast::PointerModifier::Const => " const",
-                        ast::PointerModifier::Mut => " ",
-                        _ => unimplemented!(),
-                    };
-                    write!(f, "{}{} *", DisplayType(p.ty.as_ref()), modifier)?;
-                }
+                let modifier = match p.modifier {
+                    ast::PointerModifier::Const => " const",
+                    ast::PointerModifier::Mut => "",
+                };
+                write!(f, "{}{} *", DisplayType(p.ty.as_ref()), modifier)?;
+            }
+            ast::Type::String(s) => {
+                let modifier = match s.modifier {
+                    ast::PointerModifier::Const => " const",
+                    ast::PointerModifier::Mut => "",
+                };
+                write!(f, "char{} *", modifier)?;
+            }
+            ast::Type::Owned(p) => {
+                write!(f, "vellum::owned<{}>", DisplayType(&p.ty))?;
             }
             ast::Type::FunctionPointer(ast::FunctionPointer {
                 fn_ty,

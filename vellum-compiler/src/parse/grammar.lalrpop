@@ -1,4 +1,4 @@
-use super::ast::{Field, Function, FunctionType, FunctionPointer, Identifier, Import, Item, ItemType, Location, Primitive, Pointer, PointerModifier, Struct, Type};
+use super::ast::{Field, Function, FunctionType, FunctionPointer, Identifier, Import, Item, ItemType, Location, Owned, Primitive, Pointer, PointerModifier, StringPointer, Struct, Type};
 use super::lexer;
 
 grammar(file_id: usize);
@@ -22,10 +22,11 @@ extern {
         "const" => lexer::Token::Const,
         "owned" => lexer::Token::Owned,
         "mut" => lexer::Token::Mut,
+        "string" => lexer::Token::String,
         "import" => lexer::Token::Import,
         "function" => lexer::Token::Function,
         "closure" => lexer::Token::Closure,
-        "string" => lexer::Token::String(<String>),
+        "string-literal" => lexer::Token::StringLiteral(<String>),
         "identifier" => lexer::Token::Identifier(<String>),
         "comment" => lexer::Token::Comment(<String>),
         "doc-comment" => lexer::Token::DocComment(<String>),
@@ -33,7 +34,7 @@ extern {
 }
 
 String: String =
-    "string" => <>;
+    "string-literal" => <>;
 
 Comment: String =
     "comment" => <>.trim().trim_start_matches("//").to_string();
@@ -53,11 +54,21 @@ Identifier: Identifier =
 PointerModifier: PointerModifier = {
     "const" => PointerModifier::Const,
     "mut" => PointerModifier::Mut,
-    "owned" => PointerModifier::Owned,
 }
 
 Pointer: Pointer =
     <l: @L> <modifier: PointerModifier> "*" <ty: Type> <r: @R> => Pointer { location: Location::new(file_id, l..r), modifier, ty: Box::new(ty) };
+
+StringPointer: StringPointer =
+    <l: @L> <modifier: PointerModifier> "string" <r: @R> => StringPointer { location: Location::new(file_id, l..r), modifier };
+
+OwnedTy: Type = {
+    <pointer: Pointer> => Type::Pointer(pointer),
+    <string: StringPointer> => Type::String(string),
+}
+
+Owned: Owned =
+    <l: @L> "owned" <ty: Type> <r: @R> => Owned { location: Location::new(file_id, l..r), ty: Box::new(ty) };
 
 FunctionType: FunctionType = {
     "function" => FunctionType::Function,
@@ -78,6 +89,8 @@ FunctionPointer: FunctionPointer =
 Type: Type = {
     <l: @L> <primitive: Primitive> <r: @R> => Type::Primitive { location: Location::new(file_id, l..r), primitive },
     <pointer: Pointer> => Type::Pointer(pointer),
+    <string: StringPointer> => Type::String(string),
+    <owned: Owned> => Type::Owned(owned),
     <identifier: Identifier> => Type::Identifier(identifier),
     <fn_pointer: FunctionPointer> => Type::FunctionPointer(fn_pointer),
 }

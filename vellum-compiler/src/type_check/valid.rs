@@ -116,6 +116,10 @@ fn check_type(
                 primitive: _,
             } => Ok(()),
             ast::Type::Pointer(p) => check_type(context, items, &p.ty, record_dependency, false),
+            ast::Type::String(_) => Ok(()),
+            ast::Type::Owned(p) => {
+                check_type(context, items, &p.ty, record_dependency, require_concrete)
+            }
             ast::Type::FunctionPointer(f) => {
                 check_function_args(context, items, &f.args, record_dependency)?;
                 check_type(context, items, &f.returns, record_dependency, true)?;

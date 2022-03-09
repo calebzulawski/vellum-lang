@@ -11,18 +11,18 @@ struct Foo {
 }
 
 struct Bar {
-    bar: owned * Baz,
+    bar: owned const string,
 }
 
 struct Baz;
 
 struct Functions {
-    a: function(foo: Foo) -> owned * Baz,
+    a: function(foo: Foo) -> owned mut * Baz,
     b: closure(foo: Foo) -> const * Baz,
 }
 
 /// A function
-function foo(foo: Foo) -> owned * Baz;
+function foo(foo: Foo) -> owned const * Baz;
 
 /// Another function
-function bar(foo: Foo, bar: Bar) -> owned * Baz;
+function bar(foo: Foo, bar: Bar) -> owned mut * Baz;

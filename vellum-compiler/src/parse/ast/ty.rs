@@ -1,4 +1,4 @@
-use super::{Identifier, Location, Pointer};
+use super::{Identifier, Location, Owned, Pointer, StringPointer};
 
 pub use super::Primitive;
 
@@ -37,6 +37,8 @@ pub enum Type {
         primitive: Primitive,
     },
     Pointer(Pointer),
+    String(StringPointer),
+    Owned(Owned),
     FunctionPointer(FunctionPointer),
     Identifier(Identifier),
 }
