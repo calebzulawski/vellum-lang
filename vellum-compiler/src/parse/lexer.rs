@@ -2,6 +2,7 @@ use logos::Logos;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Primitive {
+    Bool,
     I8,
     I16,
     I32,
@@ -40,6 +41,7 @@ pub enum Token {
     #[token("*")]
     Asterisk,
 
+    #[token("bool", |_| Primitive::Bool)]
     #[token("u8", |_| Primitive::U8)]
     #[token("u16", |_| Primitive::U16)]
     #[token("u32", |_| Primitive::U32)]

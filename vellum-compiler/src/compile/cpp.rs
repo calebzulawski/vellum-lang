@@ -55,6 +55,7 @@ impl std::fmt::Display for DisplayType<'_> {
         match self.0 {
             ast::Type::Primitive { primitive, .. } => {
                 let s = match primitive {
+                    ast::Primitive::Bool => "bool",
                     ast::Primitive::I8 => "int8_t",
                     ast::Primitive::I16 => "int16_t",
                     ast::Primitive::I32 => "int32_t",
