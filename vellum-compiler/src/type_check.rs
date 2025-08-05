@@ -1,4 +1,4 @@
-use crate::parse::{ast, Context};
+use crate::parse::{Context, ast};
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use std::collections::HashMap;
 

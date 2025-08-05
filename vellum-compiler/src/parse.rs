@@ -2,12 +2,11 @@ use codespan_reporting::{
     diagnostic::{Diagnostic, Label},
     files::SimpleFiles,
     term::{
-        emit,
+        Config, emit,
         termcolor::{BufferedStandardStream, ColorChoice, WriteColor},
-        Config,
     },
 };
-use lalrpop_util::{lalrpop_mod, ParseError};
+use lalrpop_util::{ParseError, lalrpop_mod};
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},

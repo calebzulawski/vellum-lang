@@ -1,5 +1,5 @@
 use super::{Compile, Items};
-use crate::parse::{ast, Context};
+use crate::parse::{Context, ast};
 use askama::Template;
 use codespan_reporting::diagnostic::Diagnostic;
 use std::{

@@ -1,4 +1,4 @@
-use crate::parse::{ast, Context};
+use crate::parse::{Context, ast};
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use std::collections::HashMap;
 
@@ -134,14 +134,16 @@ fn check_type(
                                 context.report(
                                     &Diagnostic::error()
                                         .with_message("expected a concrete type")
-                                        .with_labels(vec![Label::primary(
-                                            ident.location.file_id,
-                                            ident.location.span.clone(),
-                                        )
-                                        .with_message(format!(
-                                            "got abstract type `{}`",
-                                            ident.identifier
-                                        ))]),
+                                        .with_labels(vec![
+                                            Label::primary(
+                                                ident.location.file_id,
+                                                ident.location.span.clone(),
+                                            )
+                                            .with_message(format!(
+                                                "got abstract type `{}`",
+                                                ident.identifier
+                                            )),
+                                        ]),
                                 );
                                 Err(())
                             } else if require_concrete {
@@ -175,11 +177,10 @@ fn check_type(
                     context.report(
                         &Diagnostic::error()
                             .with_message(format!("undefined type `{}`", ident.identifier))
-                            .with_labels(vec![Label::primary(
-                                ident.location.file_id,
-                                ident.location.span.clone(),
-                            )
-                            .with_message("used here")]),
+                            .with_labels(vec![
+                                Label::primary(ident.location.file_id, ident.location.span.clone())
+                                    .with_message("used here"),
+                            ]),
                     );
                     Err(())
                 }

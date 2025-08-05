@@ -1,5 +1,5 @@
 use crate::parse::ast;
-use clap::{ValueEnum, Parser};
+use clap::{Parser, ValueEnum};
 use std::path::{Path, PathBuf};
 
 mod cpp;

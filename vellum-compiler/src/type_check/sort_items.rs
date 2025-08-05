@@ -1,4 +1,4 @@
-use crate::parse::{ast, Context};
+use crate::parse::{Context, ast};
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use petgraph::graph::DiGraph;
 use std::collections::HashMap;
@@ -45,11 +45,10 @@ pub fn sort(
             context.report(
                 &Diagnostic::error()
                     .with_message("cycle detected")
-                    .with_labels(vec![Label::primary(
-                        location.file_id,
-                        location.span.clone(),
-                    )
-                    .with_message("this type contains itself")]),
+                    .with_labels(vec![
+                        Label::primary(location.file_id, location.span.clone())
+                            .with_message("this type contains itself"),
+                    ]),
             );
         }
         Ok(order) => {
