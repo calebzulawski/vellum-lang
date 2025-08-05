@@ -1,4 +1,4 @@
-use super::ast::{Field, Function, FunctionType, FunctionPointer, Identifier, Import, Item, ItemType, Location, Owned, Primitive, Pointer, PointerModifier, StringPointer, Struct, Type};
+use super::ast::{Field, Function, FunctionType, FunctionPointer, Identifier, Import, Item, ItemType, Location, Owned, Primitive, Pointer, PointerModifier, Slice, StringPointer, Struct, Type};
 use super::lexer;
 
 grammar(file_id: usize);
@@ -12,6 +12,8 @@ extern {
         "}" => lexer::Token::RightBracket,
         "(" => lexer::Token::LeftParen,
         ")" => lexer::Token::RightParen,
+        "[" => lexer::Token::LeftSquareBracket,
+        "]" => lexer::Token::RightSquareBracket,
         ":" => lexer::Token::Colon,
         "," => lexer::Token::Comma,
         ";" => lexer::Token::Semicolon,
@@ -62,9 +64,13 @@ Pointer: Pointer =
 StringPointer: StringPointer =
     <l: @L> <modifier: PointerModifier> "string" <r: @R> => StringPointer { location: Location::new(file_id, l..r), modifier };
 
+Slice: Slice =
+    <l: @L> <modifier: PointerModifier> "[" <ty: Type> "]" <r: @R> => Slice { location: Location::new(file_id, l..r), modifier, ty: Box::new(ty) };
+
 OwnedTy: Type = {
     <pointer: Pointer> => Type::Pointer(pointer),
     <string: StringPointer> => Type::String(string),
+    <slice: Slice> => Type::Slice(slice),
 }
 
 Owned: Owned =
@@ -90,6 +96,7 @@ Type: Type = {
     <l: @L> <primitive: Primitive> <r: @R> => Type::Primitive { location: Location::new(file_id, l..r), primitive },
     <pointer: Pointer> => Type::Pointer(pointer),
     <string: StringPointer> => Type::String(string),
+    <slice: Slice> => Type::Slice(slice),
     <owned: Owned> => Type::Owned(owned),
     <identifier: Identifier> => Type::Identifier(identifier),
     <fn_pointer: FunctionPointer> => Type::FunctionPointer(fn_pointer),

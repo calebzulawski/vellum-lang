@@ -37,15 +37,25 @@ struct Foo;
 ### "Regular" pointers
 * `const * T` is a pointer to immutable data
 * `mut * T` is a pointer to mutable data
+### Strings
+`const string` and `mut string` are special pointers to a null-terminated string, equivalent to `char[]` in C.
+### Slices
+A slice `const [T]` or `mut [T]` is a pointer to a contiguous array of `T`, with the following layout in C:
+```
+struct {
+  T *array;
+  size_t length;
+}
+```
 ### Owned pointers
 `owned * T` is a pointer to "owned" data, with the following layout in C:
 ```
 struct {
-  T *data;
-  void (*deleter)(T *);
+  pointer data;
+  void (*deleter)(pointer);
 };
 ```
-`data` is a mutable pointer to the data, and calling `deleter` on that frees the pointer.  The data or the deleter is permitted to be null.
+`data` is a mutable pointer to the data, and calling `deleter` on that frees the pointer.  The data or the deleter is permitted to be null.  `pointer` may be a regular pointer, a string, or a slice.
 
 ## Functions
 Functions have the same calling convention as C functions.

@@ -55,6 +55,15 @@ template <typename T> struct owned<T *> : private detail::owned_storage<T *> {
   }
 };
 
+template <typename T> struct owned<slice<T>>: private detail::owned_storage<slice<T>> {
+  owned() : detail::owned_storage<T *>({nullptr, 0}, nullptr) {}
+  owned(const owned &) = delete;
+  owned(owned &&) noexcept = default;
+
+  owned &operator=(const owned &) = delete;
+  owned &operator=(owned &&) = default;
+};
+
 // sanity check
 static_assert(std::is_standard_layout<owned<int *>>::value);
 static_assert(std::is_standard_layout<owned<int const *>>::value);

@@ -11,7 +11,8 @@ struct Foo {
 }
 
 struct Bar {
-    bar: owned const string,
+    a: owned const string,
+    b: owned mut [Foo],
 }
 
 struct Baz;

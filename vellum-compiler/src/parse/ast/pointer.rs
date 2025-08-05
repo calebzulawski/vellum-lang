@@ -20,6 +20,13 @@ pub struct StringPointer {
 }
 
 #[derive(Clone, Debug)]
+pub struct Slice {
+    pub location: Location,
+    pub modifier: PointerModifier,
+    pub ty: Box<Type>,
+}
+
+#[derive(Clone, Debug)]
 pub struct Owned {
     pub location: Location,
     pub ty: Box<Type>,

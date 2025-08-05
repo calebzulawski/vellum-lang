@@ -83,6 +83,18 @@ impl std::fmt::Display for DisplayType<'_> {
                 };
                 write!(f, "char{} *", modifier)?;
             }
+            ast::Type::Slice(s) => {
+                let modifier = match s.modifier {
+                    ast::PointerModifier::Const => "const ",
+                    ast::PointerModifier::Mut => "",
+                };
+                write!(
+                    f,
+                    "vellum::slice<{}{}>",
+                    modifier,
+                    DisplayType(s.ty.as_ref())
+                )?;
+            }
             ast::Type::Owned(p) => {
                 write!(f, "vellum::owned<{}>", DisplayType(&p.ty))?;
             }

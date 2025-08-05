@@ -29,6 +29,12 @@ pub enum Token {
     #[token(")")]
     RightParen,
 
+    #[token("[")]
+    LeftSquareBracket,
+
+    #[token("]")]
+    RightSquareBracket,
+
     #[token(":")]
     Colon,
 

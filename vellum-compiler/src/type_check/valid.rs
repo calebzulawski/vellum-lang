@@ -117,6 +117,7 @@ fn check_type(
             } => Ok(()),
             ast::Type::Pointer(p) => check_type(context, items, &p.ty, record_dependency, false),
             ast::Type::String(_) => Ok(()),
+            ast::Type::Slice(s) => check_type(context, items, &s.ty, record_dependency, false),
             ast::Type::Owned(p) => {
                 check_type(context, items, &p.ty, record_dependency, require_concrete)
             }
