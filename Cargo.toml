@@ -2,3 +2,4 @@
 members = [
     "vellum-compiler",
 ]
+resolver = "3"

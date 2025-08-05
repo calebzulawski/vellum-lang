@@ -1,4 +1,4 @@
 [general]
 [[escaper]]
-path = "::askama::Text"
+path = "::askama::filters::Text"
 extensions = ["hpp"]

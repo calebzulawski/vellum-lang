@@ -119,7 +119,7 @@ impl std::fmt::Display for DisplayType<'_> {
 mod filters {
     use super::*;
 
-    pub fn ty(ty: &ast::Type) -> askama::Result<String> {
+    pub fn ty(ty: &ast::Type, _: &dyn askama::Values) -> askama::Result<String> {
         Ok(DisplayType(ty).to_string())
     }
 }

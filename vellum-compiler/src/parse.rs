@@ -88,7 +88,7 @@ impl Context {
                             .with_labels(vec![Label::primary(file_id, location..location)]),
                     );
                 }
-                ParseError::UnrecognizedEOF { location, expected } => {
+                ParseError::UnrecognizedEof { location, expected } => {
                     let expected = expected.join(", ");
                     self.report(
                         &Diagnostic::error()

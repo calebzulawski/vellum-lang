@@ -1,7 +1,7 @@
 use crate::parse::ast;
-use clap::{ArgEnum, Parser};
+use clap::{ValueEnum, Parser};
 
-#[derive(ArgEnum, Copy, Clone)]
+#[derive(ValueEnum, Copy, Clone)]
 enum Format {
     List,
     GnuVersionScript,
@@ -9,7 +9,7 @@ enum Format {
 
 #[derive(Parser)]
 pub struct Symbols {
-    #[clap(arg_enum, short, long, default_value_t = Format::List)]
+    #[clap(value_enum, short, long, default_value_t = Format::List)]
     format: Format,
 
     file: String,

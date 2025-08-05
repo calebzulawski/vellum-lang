@@ -97,7 +97,6 @@ pub enum Token {
     DocComment(String),
 
     #[regex(r"[ \n\t\f]", logos::skip)]
-    #[error]
     Error,
 }
 
@@ -119,6 +118,6 @@ impl<'input> Iterator for Lexer<'input> {
     fn next(&mut self) -> Option<Self::Item> {
         self.lexer
             .next()
-            .map(|token| Ok((self.lexer.span().start, token, self.lexer.span().end)))
+            .map(|token| Ok((self.lexer.span().start, token?, self.lexer.span().end)))
     }
 }

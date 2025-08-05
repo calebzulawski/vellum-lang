@@ -1,17 +1,17 @@
 use crate::parse::ast;
-use clap::{ArgEnum, Parser};
+use clap::{ValueEnum, Parser};
 use std::path::{Path, PathBuf};
 
 mod cpp;
 
-#[derive(ArgEnum, Copy, Clone)]
+#[derive(ValueEnum, Copy, Clone)]
 enum Language {
     Cpp,
 }
 
 #[derive(Parser)]
 pub struct Compile {
-    #[clap(arg_enum)]
+    #[clap(value_enum)]
     language: Language,
 
     file: String,
