@@ -16,6 +16,7 @@ pub enum Primitive {
 }
 
 #[derive(Logos, Clone, Debug, PartialEq)]
+#[logos(skip r"[ \n\t\f]")]
 pub enum Token {
     #[token("{")]
     LeftBracket,
@@ -93,6 +94,9 @@ pub enum Token {
     })]
     StringLiteral(String),
 
+    #[regex(r"[0-9]+", |lex| lex.slice().parse().map_err(std::mem::drop))]
+    IntegerLiteral(u64),
+
     #[regex(r"[a-zA-Z][a-zA-Z_]*", |lex| lex.slice().to_string())]
     Identifier(String),
 
@@ -101,9 +105,6 @@ pub enum Token {
 
     #[regex(r"///[^\n\r]*[\n\r]*", |lex| lex.slice().to_string())]
     DocComment(String),
-
-    #[regex(r"[ \n\t\f]", logos::skip)]
-    Error,
 }
 
 pub struct Lexer<'input> {

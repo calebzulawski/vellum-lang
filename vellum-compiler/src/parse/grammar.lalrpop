@@ -1,4 +1,4 @@
-use super::ast::{Field, Function, FunctionType, FunctionPointer, Identifier, Import, Item, ItemType, Location, Owned, Primitive, Pointer, PointerModifier, Slice, StringPointer, Struct, Type};
+use super::ast::{Array, Field, Function, FunctionType, FunctionPointer, Identifier, Import, Item, ItemType, Location, Owned, Primitive, Pointer, PointerModifier, Slice, StringPointer, Struct, Type};
 use super::lexer;
 
 grammar(file_id: usize);
@@ -29,6 +29,7 @@ extern {
         "function" => lexer::Token::Function,
         "closure" => lexer::Token::Closure,
         "string-literal" => lexer::Token::StringLiteral(<String>),
+        "integer-literal" => lexer::Token::IntegerLiteral(<u64>),
         "identifier" => lexer::Token::Identifier(<String>),
         "comment" => lexer::Token::Comment(<String>),
         "doc-comment" => lexer::Token::DocComment(<String>),
@@ -37,6 +38,9 @@ extern {
 
 String: String =
     "string-literal" => <>;
+
+Integer: u64 =
+    "integer-literal" => <>;
 
 Comment: String =
     "comment" => <>.trim().trim_start_matches("//").to_string();
@@ -92,6 +96,9 @@ FunctionPointer: FunctionPointer =
         returns: Box::new(returns)
     };
 
+Array: Array =
+    <l: @L> "[" <ty: Type> ";" <len: Integer> "]" <r: @R> => Array { location: Location::new(file_id, l..r), ty: Box::new(ty), len };
+
 Type: Type = {
     <l: @L> <primitive: Primitive> <r: @R> => Type::Primitive { location: Location::new(file_id, l..r), primitive },
     <pointer: Pointer> => Type::Pointer(pointer),
@@ -100,6 +107,7 @@ Type: Type = {
     <owned: Owned> => Type::Owned(owned),
     <identifier: Identifier> => Type::Identifier(identifier),
     <fn_pointer: FunctionPointer> => Type::FunctionPointer(fn_pointer),
+    <array: Array> => Type::Array(array),
 }
 
 Comma<T>: Vec<T> = {

@@ -1,6 +1,104 @@
-use crate::parse::{Context, ast};
+use crate::parse::{ast, Context};
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use std::collections::HashMap;
+
+/// Returns if the type is sized.
+///
+/// A type is sized if we know how big it is. This is the same as Rust Sized, or C/C++ complete.
+fn sized(items: &HashMap<String, ast::Item>, ty: &ast::Type) -> bool {
+    match ty {
+        ast::Type::Primitive {
+            location: _,
+            primitive: _,
+        } => true,
+        ast::Type::Pointer(_) => true,
+        ast::Type::String(_) => true,
+        ast::Type::Slice(_) => true,
+        ast::Type::Owned(_) => true,
+        ast::Type::FunctionPointer(_) => true,
+        ast::Type::Array(_) => true,
+        ast::Type::Identifier(ident) => {
+            if let Some(item) = items.get(&ident.identifier) {
+                match &item.item {
+                    ast::ItemType::Struct(s) => s.fields.is_some(),
+                    _ => unreachable!("ident check should have caught this"),
+                }
+            } else {
+                false
+            }
+        }
+    }
+}
+
+/// Check basic type properties
+fn type_checks(context: &mut Context, items: &HashMap<String, ast::Item>) -> Result<(), ()> {
+    // Flatten the type tree
+    let mut types = Vec::new();
+    for (_, item) in items {
+        match &item.item {
+            ast::ItemType::Import(_) => unreachable!("imports should have been resolved"),
+            ast::ItemType::Struct(s) => {
+                if let Some(fields) = &s.fields {
+                    for field in fields.iter() {
+                        types.extend(field.ty.iter_tree());
+                    }
+                }
+            }
+            ast::ItemType::Function(f) => {
+                for (_, ty) in f.args.iter() {
+                    types.extend(ty.iter_tree());
+                }
+                types.extend(f.returns.iter_tree())
+            }
+        }
+    }
+    let types = types;
+
+    // Check idents
+    let mut bad_ident = false;
+    for ty in types {
+        if let ast::Type::Identifier(ident) = ty {
+            if let Some(item) = items.get(&ident.identifier) {
+                let bad_item = match &item.item {
+                    ast::ItemType::Struct(_) => None,
+                    ast::ItemType::Import(_) => unreachable!("imports should have been resolved"),
+                    ast::ItemType::Function(f) => Some(("function", f.location.clone())),
+                };
+                if let Some((bad_item_name, bad_item_loc)) = bad_item {
+                    context.report(
+                        &Diagnostic::error()
+                            .with_message("expected type")
+                            .with_labels(vec![
+                                Label::primary(ident.location.file_id, ident.location.span.clone())
+                                    .with_message(format!("got a {}", bad_item_name)),
+                                Label::secondary(bad_item_loc.file_id, bad_item_loc.span.clone())
+                                    .with_message("defined here"),
+                            ]),
+                    );
+                    bad_ident = true;
+                }
+            } else {
+                context.report(
+                    &Diagnostic::error()
+                        .with_message(format!("no type `{}` found", ident.identifier))
+                        .with_labels(vec![Label::primary(
+                            ident.location.file_id,
+                            ident.location.span.clone(),
+                        )
+                        .with_message("used here")]),
+                );
+                bad_ident = true;
+            }
+        }
+    }
+    if bad_ident {
+        return Err(());
+    }
+
+    // TODO check proper sizedness
+
+    Ok(())
+}
 
 /// Assert that types only reference concrete types by value.
 ///
@@ -11,6 +109,8 @@ pub fn check(
     context: &mut Context,
     items: &HashMap<String, ast::Item>,
 ) -> Result<HashMap<String, Vec<String>>, ()> {
+    type_checks(context, items)?;
+
     let mut dependencies = HashMap::new();
 
     for (name, item) in items {
@@ -20,7 +120,8 @@ pub fn check(
                 if let Some(fields) = &s.fields {
                     // Check the following:
                     // * Fields must have unique names
-                    // * Fields must be concrete types
+                    // * Field type must be sized
+                    // * Field type must be valid
                     let mut visited_fields = HashMap::new();
                     let mut these_dependencies = Vec::new();
                     for field in fields {
@@ -46,7 +147,7 @@ pub fn check(
                             );
                         }
 
-                        // Check that the field is concrete
+                        // Check that the field type is valid
                         check_type(context, items, &field.ty, &mut these_dependencies)?;
                     }
                     dependencies.insert(name.clone(), these_dependencies);
@@ -117,7 +218,7 @@ fn check_type(
             } => Ok(()),
             ast::Type::Pointer(p) => check_type(context, items, &p.ty, record_dependency, false),
             ast::Type::String(_) => Ok(()),
-            ast::Type::Slice(s) => check_type(context, items, &s.ty, record_dependency, false),
+            ast::Type::Slice(s) => check_type(context, items, &s.ty, record_dependency, true),
             ast::Type::Owned(p) => {
                 check_type(context, items, &p.ty, record_dependency, require_concrete)
             }
@@ -126,6 +227,7 @@ fn check_type(
                 check_type(context, items, &f.returns, record_dependency, true)?;
                 Ok(())
             }
+            ast::Type::Array(a) => check_type(context, items, &a.ty, record_dependency, true),
             ast::Type::Identifier(ident) => {
                 if let Some(item) = items.get(&ident.identifier) {
                     match &item.item {
@@ -135,16 +237,14 @@ fn check_type(
                                 context.report(
                                     &Diagnostic::error()
                                         .with_message("expected a concrete type")
-                                        .with_labels(vec![
-                                            Label::primary(
-                                                ident.location.file_id,
-                                                ident.location.span.clone(),
-                                            )
-                                            .with_message(format!(
-                                                "got abstract type `{}`",
-                                                ident.identifier
-                                            )),
-                                        ]),
+                                        .with_labels(vec![Label::primary(
+                                            ident.location.file_id,
+                                            ident.location.span.clone(),
+                                        )
+                                        .with_message(format!(
+                                            "got abstract type `{}`",
+                                            ident.identifier
+                                        ))]),
                                 );
                                 Err(())
                             } else if require_concrete {
@@ -154,34 +254,17 @@ fn check_type(
                                 Ok(())
                             }
                         }
-                        ast::ItemType::Function(f) => {
-                            context.report(
-                                &Diagnostic::error()
-                                    .with_message("expected type")
-                                    .with_labels(vec![
-                                        Label::primary(
-                                            ident.location.file_id,
-                                            ident.location.span.clone(),
-                                        )
-                                        .with_message("got a function"),
-                                        Label::secondary(
-                                            f.location.file_id,
-                                            f.location.span.clone(),
-                                        )
-                                        .with_message("defined here"),
-                                    ]),
-                            );
-                            Err(())
-                        }
+                        ast::ItemType::Function(f) => unreachable!("already checked")
                     }
                 } else {
                     context.report(
                         &Diagnostic::error()
                             .with_message(format!("undefined type `{}`", ident.identifier))
-                            .with_labels(vec![
-                                Label::primary(ident.location.file_id, ident.location.span.clone())
-                                    .with_message("used here"),
-                            ]),
+                            .with_labels(vec![Label::primary(
+                                ident.location.file_id,
+                                ident.location.span.clone(),
+                            )
+                            .with_message("used here")]),
                     );
                     Err(())
                 }

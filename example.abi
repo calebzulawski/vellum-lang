@@ -12,7 +12,7 @@ struct Foo {
 
 struct Bar {
     a: owned const string,
-    b: owned mut [Foo],
+    b: owned mut [foo],
 }
 
 struct Baz;

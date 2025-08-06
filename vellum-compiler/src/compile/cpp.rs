@@ -122,6 +122,9 @@ impl std::fmt::Display for DisplayType<'_> {
                 }
                 write!(f, ")>")?;
             }
+            ast::Type::Array(a) => {
+                write!(f, "std::array<{}, {}>", DisplayType(&a.ty), a.len)?;
+            }
             ast::Type::Identifier(i) => write!(f, "{}", i.identifier)?,
         }
         Ok(())
