@@ -1,4 +1,4 @@
-use crate::parse::{ast, Context};
+use crate::parse::{Context, ast};
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use std::collections::HashMap;
 
@@ -70,11 +70,10 @@ fn type_checks(context: &mut Context, items: &HashMap<String, ast::Item>) -> Res
                 context.report(
                     &Diagnostic::error()
                         .with_message(format!("no type `{}` found", ident.identifier))
-                        .with_labels(vec![Label::primary(
-                            ident.location.file_id,
-                            ident.location.span.clone(),
-                        )
-                        .with_message("used here")]),
+                        .with_labels(vec![
+                            Label::primary(ident.location.file_id, ident.location.span.clone())
+                                .with_message("used here"),
+                        ]),
                 );
                 bad_ident = true;
             }
