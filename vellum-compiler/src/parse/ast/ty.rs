@@ -53,8 +53,25 @@ pub enum Type {
 }
 
 impl Type {
+    /// Iterate over this type and all contained types of this type.
     pub fn iter_tree<'a>(&'a self) -> TypeIterator<'a> {
         return TypeIterator { stack: vec![self] };
+    }
+
+    pub fn location(&self) -> &Location {
+        match &self {
+            Self::Primitive {
+                location,
+                primitive: _,
+            } => &location,
+            Self::Pointer(p) => &p.location,
+            Self::String(s) => &s.location,
+            Self::Slice(s) => &s.location,
+            Self::Owned(o) => &o.location,
+            Self::FunctionPointer(f) => &f.location,
+            Self::Array(a) => &a.location,
+            Self::Identifier(i) => &i.location,
+        }
     }
 }
 
