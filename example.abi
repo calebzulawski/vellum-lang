@@ -13,7 +13,6 @@ struct Foo {
 struct Bar {
     a: owned const string,
     b: owned mut [Foo],
-    c: [Baz; 3],
 }
 
 struct Baz;

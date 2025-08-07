@@ -45,7 +45,7 @@ fn type_checks(context: &mut Context, items: &HashMap<String, ast::Item>) -> Res
 
     // Check idents
     let mut bad_ident = false;
-    for ty in types {
+    for ty in &types {
         if let ast::Type::Identifier(ident) = ty {
             if let Some(item) = items.get(&ident.identifier) {
                 let bad_item = match &item.item {
@@ -84,7 +84,38 @@ fn type_checks(context: &mut Context, items: &HashMap<String, ast::Item>) -> Res
         return Err(());
     }
 
-    // TODO check proper sizedness
+    // Check proper sizedness of all types
+    let mut bad_sized = false;
+    for ty in &types {
+        match &ty {
+            ast::Type::Primitive {
+                location: _,
+                primitive: _,
+            } => {}
+            ast::Type::Pointer(_) => {}
+            ast::Type::String(_) => {}
+            ast::Type::Slice(_) => {}
+            ast::Type::Owned(_) => {}
+            ast::Type::FunctionPointer(_) => {}
+            ast::Type::Array(a) => {
+                if !is_sized(a.ty.as_ref(), &items) {
+                    context.report(
+                        &Diagnostic::error()
+                            .with_message("array element must be a sized type")
+                            .with_labels(vec![Label::primary(
+                                a.location.file_id,
+                                a.location.span.clone(),
+                            )]),
+                    );
+                    bad_sized = true;
+                }
+            }
+            ast::Type::Identifier(_) => {}
+        }
+    }
+    if bad_sized {
+        return Err(());
+    }
 
     Ok(())
 }
