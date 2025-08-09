@@ -1,0 +1,24 @@
+struct KvStore;
+
+struct KvEntry {
+    key: const string,
+    value: const string,
+}
+
+/// Create the key-value store
+function kv_create() -> owned mut * KvStore;
+
+/// Insert a value
+function kv_set(store: mut * KvStore, key: const string, value: const string) -> void;
+
+/// Get a value
+function kv_get(store: const * KvStore, key: const string) -> const string;
+
+/// Delete an entry
+function kv_delete(store: mut * KvStore, key: const string) -> void;
+
+/// Return the number of entries
+function kv_size(store: const * KvStore) -> usize;
+
+/// Delete all entries
+function kv_clear(store: mut * KvStore) -> void;
