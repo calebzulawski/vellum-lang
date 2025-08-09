@@ -53,6 +53,10 @@ template <typename T> struct owned<T *> : private detail::owned_storage<T *> {
   operator std::shared_ptr<T>() && {
     return std::shared_ptr<T>(this->value, this->deleter);
   }
+
+  T *get() const noexcept {
+    return this->value;
+  }
 };
 
 template <typename T> struct owned<slice<T>>: private detail::owned_storage<slice<T>> {
