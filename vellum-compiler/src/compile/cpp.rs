@@ -1,5 +1,5 @@
 use super::{Compile, Items};
-use crate::parse::{Context, ast};
+use crate::parse::{ast, Context};
 use askama::Template;
 use codespan_reporting::diagnostic::Diagnostic;
 use std::{
@@ -40,7 +40,7 @@ pub(super) fn compile(context: &mut Context, options: Compile, items: Items) -> 
 fn compile_impl(items: Items, output_file: &Path) -> Result<(), Error> {
     let mut file = OpenOptions::new()
         .write(true)
-        .create_new(true)
+        .create(true)
         .open(output_file)?;
 
     let template = CppTemplate { items };
@@ -108,12 +108,13 @@ impl std::fmt::Display for DisplayType<'_> {
                     ast::FunctionType::Function => "function",
                     ast::FunctionType::Closure => "closure",
                 };
-                write!(
-                    f,
-                    "vellum::{}<{} (",
-                    fn_ty_name,
-                    DisplayType(returns.as_ref())
-                )?;
+                let fn_ret_ty = if let Some(returns) = &returns {
+                    DisplayType(returns).to_string()
+                } else {
+                    "void".to_string()
+                };
+
+                write!(f, "vellum::{}<{} (", fn_ty_name, fn_ret_ty,)?;
                 if !args.is_empty() {
                     for arg in args.iter().take(args.len() - 1) {
                         write!(f, "{}, ", DisplayType(&arg.1))?;
@@ -136,5 +137,13 @@ mod filters {
 
     pub fn ty(ty: &ast::Type, _: &dyn askama::Values) -> askama::Result<String> {
         Ok(DisplayType(ty).to_string())
+    }
+
+    pub fn retty(ty: &Option<ast::Type>, _: &dyn askama::Values) -> askama::Result<String> {
+        if let Some(ty) = ty {
+            Ok(DisplayType(ty).to_string())
+        } else {
+            return Ok("void".to_string());
+        }
     }
 }

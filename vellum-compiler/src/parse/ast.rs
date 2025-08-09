@@ -46,7 +46,7 @@ pub struct Function {
     pub location: Location,
     pub name: Identifier,
     pub args: Vec<(Identifier, Type)>,
-    pub returns: Box<Type>,
+    pub returns: Option<Box<Type>>,
 }
 
 #[derive(Clone, Debug)]

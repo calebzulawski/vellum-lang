@@ -1,4 +1,4 @@
-use crate::parse::{Context, ast};
+use crate::parse::{ast, Context};
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use std::collections::HashMap;
 
@@ -37,7 +37,9 @@ fn type_checks(context: &mut Context, items: &HashMap<String, ast::Item>) -> Res
                 for (_, ty) in f.args.iter() {
                     types.extend(ty.iter_tree());
                 }
-                types.extend(f.returns.iter_tree())
+                if let Some(returns) = &f.returns {
+                    types.extend(returns.iter_tree())
+                }
             }
         }
     }
@@ -70,10 +72,11 @@ fn type_checks(context: &mut Context, items: &HashMap<String, ast::Item>) -> Res
                 context.report(
                     &Diagnostic::error()
                         .with_message(format!("no type `{}` found", ident.identifier))
-                        .with_labels(vec![
-                            Label::primary(ident.location.file_id, ident.location.span.clone())
-                                .with_message("used here"),
-                        ]),
+                        .with_labels(vec![Label::primary(
+                            ident.location.file_id,
+                            ident.location.span.clone(),
+                        )
+                        .with_message("used here")]),
                 );
                 bad_ident = true;
             }
@@ -257,20 +260,22 @@ pub fn check(
                     add_layout_deps(&ty, &mut these_dependencies);
                 }
 
-                add_layout_deps(&f.returns, &mut these_dependencies);
+                if let Some(returns) = &f.returns {
+                    add_layout_deps(&returns, &mut these_dependencies);
 
-                if !is_sized(&f.returns, &items) {
-                    context.report(
-                        &Diagnostic::error()
-                            .with_message("return type is not a sized type")
-                            .with_labels(vec![
-                                Label::primary(
-                                    f.returns.location().file_id,
-                                    f.returns.location().span.clone(),
-                                )
-                                .with_message("structs without fields are not sized, but can be referenced through pointers"),
-                            ]),
-                    );
+                    if !is_sized(&returns, &items) {
+                        context.report(
+                            &Diagnostic::error()
+                                .with_message("return type is not a sized type")
+                                .with_labels(vec![
+                                    Label::primary(
+                                        returns.location().file_id,
+                                        returns.location().span.clone(),
+                                    )
+                                    .with_message("structs without fields are not sized, but can be referenced through pointers"),
+                                ]),
+                        );
+                    }
                 }
 
                 dependencies.insert(name.clone(), these_dependencies);

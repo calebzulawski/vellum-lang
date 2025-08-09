@@ -27,7 +27,7 @@ pub struct FunctionPointer {
     pub location: Location,
     pub fn_ty: FunctionType,
     pub args: Vec<(Identifier, Type)>,
-    pub returns: Box<Type>,
+    pub returns: Option<Box<Type>>,
 }
 
 #[derive(Clone, Debug)]
@@ -97,7 +97,9 @@ impl<'a> Iterator for TypeIterator<'a> {
                     for (_, ty) in f.args.iter() {
                         self.stack.push(&ty);
                     }
-                    self.stack.push(f.returns.as_ref());
+                    if let Some(returns) = &f.returns {
+                        self.stack.push(&returns);
+                    }
                 }
                 Type::Array(a) => self.stack.push(a.ty.as_ref()),
                 Type::Identifier(_) => {}

@@ -48,6 +48,9 @@ pub enum Token {
     #[token("*")]
     Asterisk,
 
+    #[token("void")]
+    Void,
+
     #[token("bool", |_| Primitive::Bool)]
     #[token("u8", |_| Primitive::U8)]
     #[token("u16", |_| Primitive::U16)]

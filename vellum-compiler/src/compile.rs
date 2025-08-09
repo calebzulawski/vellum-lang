@@ -25,7 +25,6 @@ impl Compile {
         self.output_dir
             .as_ref()
             .map(|p| Path::new(&p).to_path_buf())
-            .or_else(|| Path::new(&self.file).parent().map(Path::to_path_buf))
     }
 }
 
@@ -50,7 +49,7 @@ pub(crate) struct Function {
     docs: Vec<String>,
     name: String,
     args: Vec<(String, ast::Type)>,
-    returns: ast::Type,
+    returns: Option<ast::Type>,
 }
 
 pub(crate) struct Items {
@@ -104,7 +103,7 @@ pub fn compile(compile: Compile) -> Result<(), ()> {
                     .iter()
                     .map(|(name, ty)| (name.identifier.clone(), ty.clone()))
                     .collect(),
-                returns: f.returns.as_ref().clone(),
+                returns: f.returns.as_ref().map(|r| r.as_ref().clone()),
             }),
             _ => None,
         })

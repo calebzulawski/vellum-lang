@@ -19,6 +19,7 @@ extern {
         ";" => lexer::Token::Semicolon,
         "*" => lexer::Token::Asterisk,
         "->" => lexer::Token::Arrow,
+        "void" => lexer::Token::Void,
         "primitive" => lexer::Token::Primitive(<Primitive>),
         "struct" => lexer::Token::Struct,
         "const" => lexer::Token::Const,
@@ -88,12 +89,17 @@ FunctionType: FunctionType = {
 FunctionArg: (Identifier, Type) =
     <ident: Identifier> ":" <ty: Type> => (ident, ty);
 
+FunctionReturnType: Option<Box<Type>> = {
+    "void" => None,
+    <ty: Type> => Some(Box::new(ty)),
+}
+
 FunctionPointer: FunctionPointer =
-    <l: @L> <fn_ty: FunctionType> "(" <args: Comma<FunctionArg>> ")" "->" <returns: Type> <r: @R> => FunctionPointer {
+    <l: @L> <fn_ty: FunctionType> "(" <args: Comma<FunctionArg>> ")" "->" <returns: FunctionReturnType> <r: @R> => FunctionPointer {
         location: Location::new(file_id, l..r),
         fn_ty,
         args,
-        returns: Box::new(returns)
+        returns,
     };
 
 Array: Array =
@@ -135,11 +141,11 @@ Import: Import =
     <l: @L> "import" <path: String> <r: @R> => Import { location: Location::new(file_id, l..r), path, resolved: None };
 
 Function: Function =
-    <l: @L> "function" <name: Identifier> "(" <args: Comma<FunctionArg>> ")" "->" <returns: Type> ";" <r: @R> => Function {
+    <l: @L> "function" <name: Identifier> "(" <args: Comma<FunctionArg>> ")" "->" <returns: FunctionReturnType> ";" <r: @R> => Function {
         location: Location::new(file_id, l..r),
         name,
         args,
-        returns: Box::new(returns),
+        returns,
     };
 
 ItemType: ItemType = {
