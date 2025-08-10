@@ -37,6 +37,16 @@ namespace vellum_implement {
         return store->map.size();
     }
 
+    vellum::owned_slice<KvEntry> kv_entries(const KvStore *store) noexcept {
+        std::vector<KvEntry> entries;
+        for (const auto& kv : store->map) {
+            entries.emplace_back();
+            entries.back().key = kv.first.c_str();
+            entries.back().value = kv.second.c_str();
+        }
+        return entries;
+    }
+
     void kv_clear(KvStore *store) noexcept {
         store->map.clear();
     }

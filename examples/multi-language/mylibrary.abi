@@ -20,5 +20,8 @@ function kv_delete(store: mut * KvStore, key: const string) -> void;
 /// Return the number of entries
 function kv_size(store: const * KvStore) -> usize;
 
+/// List all entries
+function kv_entries(store: const * KvStore) -> owned mut [KvEntry];
+
 /// Delete all entries
 function kv_clear(store: mut * KvStore) -> void;
