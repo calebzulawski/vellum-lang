@@ -1,5 +1,5 @@
 [workspace]
 members = [
-    "vellum-compiler",
+    "compiler",
 ]
 resolver = "3"

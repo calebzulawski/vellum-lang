@@ -8,7 +8,7 @@ mylibrary.so:
 
 .PHONY: run
 run: mylibrary.py mylibrary.so
-	PYTHONPATH=$(CURDIR)/../../../python python3 main.py
+	PYTHONPATH=$(CURDIR)/../../../library/python python3 main.py
 
 .PHONY: clean
 clean:
