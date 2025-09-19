@@ -2,12 +2,14 @@ use crate::parse::ast;
 use clap::{Parser, ValueEnum};
 use std::path::{Path, PathBuf};
 
+mod c;
 mod cpp;
 mod python;
 
 #[derive(ValueEnum, Copy, Clone)]
 enum Language {
     Cpp,
+    C,
     Python,
 }
 
@@ -117,6 +119,7 @@ pub fn compile(compile: Compile) -> Result<(), ()> {
     };
     match compile.language {
         Language::Cpp => cpp::compile(&mut context, compile, items),
+        Language::C => c::compile(&mut context, compile, items),
         Language::Python => python::compile(&mut context, compile, items),
     }
 }

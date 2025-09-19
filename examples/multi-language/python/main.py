@@ -4,19 +4,11 @@ import platform
 import mylibrary
 
 
-def load_library():
-    dirname = os.path.dirname(__file__)
-    libname = {
-        'Windows': 'mylibrary.dll',
-        'Linux': 'libmylibrary.so',
-        'Darwin': 'libmylibrary.dylib',
-    }[platform.system()]
-
-    return mylibrary.load(os.path.join(dirname, f'../c++/{libname}'))
+def load_library(path):
+    return mylibrary.load(path)
 
 
-def main():
-    lib = load_library()
+def run_with(lib):
 
     store = lib.kv_create()
     lib.kv_set(store.data, b"Alice", b"teacher")
@@ -35,6 +27,23 @@ def main():
         key = entry.key.decode("utf-8")
         value = entry.value.decode("utf-8")
         print(f"{key} is a {value}")
+
+
+def main():
+    dirname = os.path.dirname(__file__)
+    libnames = {
+        'Windows': ('mylibrary.dll', 'mylibrary_c.dll'),
+        'Linux': ('libmylibrary.so', 'libmylibrary_c.so'),
+        'Darwin': ('libmylibrary.dylib', 'libmylibrary_c.dylib'),
+    }[platform.system()]
+
+    # C++ library
+    lib_cpp = load_library(os.path.join(dirname, f'../c++/{libnames[0]}'))
+    run_with(lib_cpp)
+
+    # C library
+    lib_c = load_library(os.path.join(dirname, f'../c/{libnames[1]}'))
+    run_with(lib_c)
 
 
 if __name__ == "__main__":

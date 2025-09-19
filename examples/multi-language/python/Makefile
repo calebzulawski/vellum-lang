@@ -5,6 +5,7 @@ mylibrary.py:
 .PHONY: mylibrary.so
 mylibrary.so:
 	$(MAKE) -C ../c++
+	$(MAKE) -C ../c libmylibrary_c.so
 
 .PHONY: run
 run: mylibrary.py mylibrary.so

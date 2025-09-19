@@ -1,0 +1,4 @@
+mylibrary.h
+libmylibrary_c.so
+test_c_against_c
+test_c_against_cpp

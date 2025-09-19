@@ -1,5 +1,5 @@
 use super::{Compile, Items};
-use crate::parse::{ast, Context};
+use crate::parse::{Context, ast};
 use askama::Template;
 use codespan_reporting::diagnostic::Diagnostic;
 use std::{
@@ -181,7 +181,12 @@ impl std::fmt::Display for DisplayTypeRaii<'_> {
             ast::Type::Owned(p) => {
                 write!(f, "vellum::owned<{}>", DisplayTypeRaii(&p.ty))?;
             }
-            ast::Type::FunctionPointer(ast::FunctionPointer { fn_ty, args, returns, .. }) => {
+            ast::Type::FunctionPointer(ast::FunctionPointer {
+                fn_ty,
+                args,
+                returns,
+                ..
+            }) => {
                 let fn_ty_name = match fn_ty {
                     ast::FunctionType::Function => "function",
                     ast::FunctionType::Closure => "closure",
