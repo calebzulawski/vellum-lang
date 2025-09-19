@@ -15,3 +15,4 @@
 {% include "c++/_functions.hpp" %}
 
 {% include "c++/_implement_macro.hpp" %}
+
