@@ -16,13 +16,17 @@ def Slice(elem_type):
         def __iter__(self):
             count = len(self)
             for i in range(count):
-                yield ptr[i]
+                yield self.data[i]
+
+        def __getitem__(self, idx):
+            return self.data[idx]
 
     return Slice
 
 def Owned(pointer_type):
     class Owned(ct.Structure):
         POINTER_TYPE = pointer_type
+        # Deleter always takes the whole pointer type (fat pointers by value).
         DELETER_TYPE = ct.CFUNCTYPE(None, pointer_type)
 
         _fields_ = [
@@ -30,14 +34,38 @@ def Owned(pointer_type):
             ('deleter', DELETER_TYPE),
         ]
 
+        def _is_slice(self):
+            return hasattr(self.POINTER_TYPE, 'ELEMENT_TYPE')
+
         def free(self):
-            if self.deleter:
-                self.deleter(self.data)
-            self.data = None
-            self.deleter = None
+            if getattr(self, '_freed', False):
+                return
+            try:
+                if self.deleter:
+                    # Call deleter. For slices, pass the underlying array pointer for robustness across FFI.
+                    if self._is_slice():
+                        self.deleter(self.data.data)
+                    else:
+                        self.deleter(self.data)
+            finally:
+                # Reset data to a benign default to avoid accidental reuse.
+                if self._is_slice():
+                    self.data = self.POINTER_TYPE()
+                else:
+                    self.data = None
+                self._freed = True
 
         def __del__(self):
-            self.free()
+            try:
+                self.free()
+            except Exception:
+                pass
+
+        # If this Owned wraps a slice, allow direct iteration.
+        def __iter__(self):
+            if self._is_slice():
+                return iter(self.data)
+            raise TypeError('Owned value is not iterable')
 
     return Owned
 

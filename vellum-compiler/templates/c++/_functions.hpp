@@ -1,9 +1,5 @@
 {% import "c++/_macros.hpp" as m %}
 
-// Visibility control
-// - Compiling with the VELLUM_DYNAMIC macro defined enables visibility control.
-// - Compiling with the VELLUM_EXPORT macro defined indicates the API is
-//   being built into a shared library, rather than imported.
 #ifndef VELLUM_API
   #ifdef VELLUM_DYNAMIC
     #ifdef VELLUM_EXPORT
@@ -24,7 +20,7 @@
   #endif
 #endif
 
-// Forward declarations
+namespace vellum_private_abi {
 extern "C" {
 
 {% for f in items.functions %}
@@ -37,3 +33,23 @@ VELLUM_API {{ f.returns|retty }} {{ f.name }}(
 {% endfor %}
 
 }
+}
+
+{% for f in items.functions %}
+{%- call m::docs("", f.docs) %}
+inline {{ f.returns|retty_raii }} {{ f.name }}(
+{%- for arg in f.args %}
+  {{ arg.1|ty_raii }} {{ arg.0 }}{% call m::comma() %}
+{%- endfor %}
+) noexcept {
+  {%- if f.returns.is_some() %}
+  return vellum_private_abi::{{ f.name }}(
+  {%- else %}
+  vellum_private_abi::{{ f.name }}(
+  {%- endif %}
+  {%- for arg in f.args %}
+    std::move({{ arg.0 }}){% call m::comma() %}
+  {%- endfor %}
+  );
+}
+{% endfor %}

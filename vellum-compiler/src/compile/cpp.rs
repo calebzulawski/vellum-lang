@@ -48,9 +48,10 @@ fn compile_impl(items: Items, output_file: &Path) -> Result<(), Error> {
     Ok(())
 }
 
-struct DisplayType<'a>(&'a ast::Type);
+struct DisplayTypeAbi<'a>(&'a ast::Type);
+struct DisplayTypeRaii<'a>(&'a ast::Type);
 
-impl std::fmt::Display for DisplayType<'_> {
+impl std::fmt::Display for DisplayTypeAbi<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         match self.0 {
             ast::Type::Primitive { primitive, .. } => {
@@ -74,7 +75,89 @@ impl std::fmt::Display for DisplayType<'_> {
                     ast::PointerModifier::Const => " const",
                     ast::PointerModifier::Mut => "",
                 };
-                write!(f, "{}{} *", DisplayType(p.ty.as_ref()), modifier)?;
+                write!(f, "{}{} *", DisplayTypeAbi(p.ty.as_ref()), modifier)?;
+            }
+            ast::Type::String(s) => {
+                let modifier = match s.modifier {
+                    ast::PointerModifier::Const => " const",
+                    ast::PointerModifier::Mut => "",
+                };
+                write!(f, "char{} *", modifier)?;
+            }
+            ast::Type::Slice(s) => {
+                let modifier = match s.modifier {
+                    ast::PointerModifier::Const => "const ",
+                    ast::PointerModifier::Mut => "",
+                };
+                write!(
+                    f,
+                    "vellum::detail::abi::slice<{}{}>",
+                    modifier,
+                    DisplayTypeAbi(s.ty.as_ref())
+                )?;
+            }
+            ast::Type::Owned(p) => {
+                write!(f, "vellum::detail::abi::owned<{}>", DisplayTypeAbi(&p.ty))?;
+            }
+            ast::Type::FunctionPointer(ast::FunctionPointer {
+                fn_ty,
+                args,
+                returns,
+                ..
+            }) => {
+                let fn_ty_name = match fn_ty {
+                    ast::FunctionType::Function => "function",
+                    ast::FunctionType::Closure => "detail::abi::closure",
+                };
+                let fn_ret_ty = if let Some(returns) = &returns {
+                    DisplayTypeAbi(returns).to_string()
+                } else {
+                    "void".to_string()
+                };
+
+                write!(f, "vellum::{}<{} (", fn_ty_name, fn_ret_ty,)?;
+                if !args.is_empty() {
+                    for arg in args.iter().take(args.len() - 1) {
+                        write!(f, "{}, ", DisplayTypeAbi(&arg.1))?;
+                    }
+                    write!(f, "{}", DisplayTypeAbi(&args.last().unwrap().1))?;
+                }
+                write!(f, ")>")?;
+            }
+            ast::Type::Array(a) => {
+                write!(f, "std::array<{}, {}>", DisplayTypeAbi(&a.ty), a.len)?;
+            }
+            ast::Type::Identifier(i) => write!(f, "{}", i.identifier)?,
+        }
+        Ok(())
+    }
+}
+
+impl std::fmt::Display for DisplayTypeRaii<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        match self.0 {
+            ast::Type::Primitive { primitive, .. } => {
+                let s = match primitive {
+                    ast::Primitive::Bool => "bool",
+                    ast::Primitive::I8 => "int8_t",
+                    ast::Primitive::I16 => "int16_t",
+                    ast::Primitive::I32 => "int32_t",
+                    ast::Primitive::I64 => "int64_t",
+                    ast::Primitive::Isize => "ssize_t",
+                    ast::Primitive::U8 => "uint8_t",
+                    ast::Primitive::U16 => "uint16_t",
+                    ast::Primitive::U32 => "uint32_t",
+                    ast::Primitive::U64 => "uint64_t",
+                    ast::Primitive::Usize => "size_t",
+                };
+                write!(f, "{}", s)?;
+            }
+            ast::Type::Pointer(p) => {
+                let modifier = match p.modifier {
+                    ast::PointerModifier::Const => " const",
+                    ast::PointerModifier::Mut => "",
+                };
+                write!(f, "{}{} *", DisplayTypeRaii(p.ty.as_ref()), modifier)?;
             }
             ast::Type::String(s) => {
                 let modifier = match s.modifier {
@@ -92,24 +175,19 @@ impl std::fmt::Display for DisplayType<'_> {
                     f,
                     "vellum::slice<{}{}>",
                     modifier,
-                    DisplayType(s.ty.as_ref())
+                    DisplayTypeRaii(s.ty.as_ref())
                 )?;
             }
             ast::Type::Owned(p) => {
-                write!(f, "vellum::owned<{}>", DisplayType(&p.ty))?;
+                write!(f, "vellum::owned<{}>", DisplayTypeRaii(&p.ty))?;
             }
-            ast::Type::FunctionPointer(ast::FunctionPointer {
-                fn_ty,
-                args,
-                returns,
-                ..
-            }) => {
+            ast::Type::FunctionPointer(ast::FunctionPointer { fn_ty, args, returns, .. }) => {
                 let fn_ty_name = match fn_ty {
                     ast::FunctionType::Function => "function",
                     ast::FunctionType::Closure => "closure",
                 };
                 let fn_ret_ty = if let Some(returns) = &returns {
-                    DisplayType(returns).to_string()
+                    DisplayTypeRaii(returns).to_string()
                 } else {
                     "void".to_string()
                 };
@@ -117,14 +195,14 @@ impl std::fmt::Display for DisplayType<'_> {
                 write!(f, "vellum::{}<{} (", fn_ty_name, fn_ret_ty,)?;
                 if !args.is_empty() {
                     for arg in args.iter().take(args.len() - 1) {
-                        write!(f, "{}, ", DisplayType(&arg.1))?;
+                        write!(f, "{}, ", DisplayTypeRaii(&arg.1))?;
                     }
-                    write!(f, "{}", DisplayType(&args.last().unwrap().1))?;
+                    write!(f, "{}", DisplayTypeRaii(&args.last().unwrap().1))?;
                 }
                 write!(f, ")>")?;
             }
             ast::Type::Array(a) => {
-                write!(f, "std::array<{}, {}>", DisplayType(&a.ty), a.len)?;
+                write!(f, "std::array<{}, {}>", DisplayTypeRaii(&a.ty), a.len)?;
             }
             ast::Type::Identifier(i) => write!(f, "{}", i.identifier)?,
         }
@@ -136,12 +214,24 @@ mod filters {
     use super::*;
 
     pub fn ty(ty: &ast::Type, _: &dyn askama::Values) -> askama::Result<String> {
-        Ok(DisplayType(ty).to_string())
+        Ok(DisplayTypeAbi(ty).to_string())
     }
 
     pub fn retty(ty: &Option<ast::Type>, _: &dyn askama::Values) -> askama::Result<String> {
         if let Some(ty) = ty {
-            Ok(DisplayType(ty).to_string())
+            Ok(DisplayTypeAbi(ty).to_string())
+        } else {
+            return Ok("void".to_string());
+        }
+    }
+
+    pub fn ty_raii(ty: &ast::Type, _: &dyn askama::Values) -> askama::Result<String> {
+        Ok(DisplayTypeRaii(ty).to_string())
+    }
+
+    pub fn retty_raii(ty: &Option<ast::Type>, _: &dyn askama::Values) -> askama::Result<String> {
+        if let Some(ty) = ty {
+            Ok(DisplayTypeRaii(ty).to_string())
         } else {
             return Ok("void".to_string());
         }

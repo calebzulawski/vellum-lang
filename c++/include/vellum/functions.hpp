@@ -4,9 +4,14 @@
 #include <type_traits>
 #include <utility>
 
+#include "vellum/abi.hpp"
+
 namespace vellum {
 
+template <typename> struct closure;
+
 namespace detail {
+
 template <typename> struct function_ptr;
 template <typename R, typename... Args> struct function_ptr<R(Args...)> {
   using type = R (*)(Args...);
@@ -185,5 +190,29 @@ static_assert(!std::is_trivially_destructible_v<closure<int(int)>>);
 static_assert(std::is_nothrow_move_constructible_v<closure<int(int)>>);
 static_assert(std::is_nothrow_move_assignable_v<closure<int(int)>>);
 static_assert(std::is_nothrow_swappable_v<closure<int(int)>>);
+
+// ABI invariants for POD closure
+static_assert(std::is_standard_layout_v<detail::abi::closure<int(int)>>);
+static_assert(std::is_trivially_copyable_v<detail::abi::closure<int(int)>>);
+
+// detail::abi::closure <-> RAII closure conversions
+template <typename R, typename... Args>
+inline detail::abi::closure<R(Args...)>::closure(
+    ::vellum::closure<R(Args...)> &&other) noexcept
+    : caller(other.caller), state(other.state), deleter(other.deleter) {
+  other.caller = nullptr;
+  other.state = nullptr;
+  other.deleter = nullptr;
+}
+
+template <typename R, typename... Args>
+inline detail::abi::closure<R(Args...)>::operator ::vellum::closure<
+    R(Args...)>() && noexcept {
+  ::vellum::closure<R(Args...)> out(caller, state, deleter);
+  caller = nullptr;
+  state = nullptr;
+  deleter = nullptr;
+  return out;
+}
 
 } // namespace vellum
