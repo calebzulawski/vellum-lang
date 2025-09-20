@@ -1,4 +1,4 @@
-use super::{Compile, Items};
+use super::{Compile, Items, Mode};
 use crate::parse::{Context, ast};
 use askama::Template;
 use codespan_reporting::diagnostic::Diagnostic;
@@ -6,19 +6,34 @@ use std::{
     collections::BTreeSet,
     fs::OpenOptions,
     io::{Error, Write},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 // C backend: generates concrete C typedefs and prototypes.
 // Differs from C++ (templates/RAII) and Python (ctypes) by materializing
 // per-type slice/owned typedefs because C has no templates.
 #[derive(Template)]
-#[template(path = "c/compile.h", escape = "none")]
-struct CTemplate {
+#[template(path = "c/import.h", escape = "none")]
+struct CHeaderTemplate {
     items: Items,
     slice_decls: Vec<SliceDecl>,
     owned_ptr_decls: Vec<OwnedPtrDecl>,
     owned_slice_decls: Vec<OwnedSliceDecl>,
+}
+
+#[derive(Template)]
+#[template(path = "c/export.h", escape = "none")]
+struct CImplementationHeaderTemplate {
+    items: Items,
+    header_name: String,
+}
+
+#[derive(Template)]
+#[template(path = "c/export.c", escape = "none")]
+struct CExportSourceTemplate {
+    items: Items,
+    header_name: String,
+    implementation_header_name: String,
 }
 
 // Concrete typedefs needed in emitted C header
@@ -39,40 +54,119 @@ struct OwnedSliceDecl {
 }
 
 pub(super) fn compile(context: &mut Context, options: Compile, items: Items) -> Result<(), ()> {
-    let file_name = Path::new(&options.file)
-        .with_extension("h")
-        .file_name()
+    let file_stem = Path::new(&options.file)
+        .file_stem()
         .unwrap()
-        .to_owned();
-    let output_file = if let Some(output_dir) = options.resolve_output_dir() {
-        output_dir.join(file_name)
-    } else {
-        file_name.into()
-    };
-    if let Err(e) = compile_impl(items, &output_file) {
+        .to_string_lossy()
+        .into_owned();
+    let output_dir = options.resolve_output_dir();
+
+    let header_filename = format!("{}.h", file_stem);
+    let header_path = output_path(output_dir.as_ref(), &header_filename);
+    if let Err(e) = compile_header(items.clone(), &header_path) {
         context.report(
             &Diagnostic::error()
-                .with_message(format!("error writing to `{}`", output_file.display()))
+                .with_message(format!("error writing to `{}`", header_path.display()))
                 .with_notes(vec![format!("{}", e)]),
         );
-        Err(())
+        return Err(());
+    }
+
+    if options.mode == Mode::Export {
+        let implementation_header_filename = format!("{}_export.h", file_stem);
+        let implementation_header_path =
+            output_path(output_dir.as_ref(), &implementation_header_filename);
+        if let Err(e) = compile_implementation_header(
+            items.clone(),
+            header_filename.clone(),
+            &implementation_header_path,
+        ) {
+            context.report(
+                &Diagnostic::error()
+                    .with_message(format!(
+                        "error writing to `{}`",
+                        implementation_header_path.display()
+                    ))
+                    .with_notes(vec![format!("{}", e)]),
+            );
+            return Err(());
+        }
+
+        let source_filename = format!("{}_export.c", file_stem);
+        let source_path = output_path(output_dir.as_ref(), &source_filename);
+        if let Err(e) = compile_export_source(
+            items,
+            header_filename,
+            implementation_header_filename,
+            &source_path,
+        ) {
+            context.report(
+                &Diagnostic::error()
+                    .with_message(format!("error writing to `{}`", source_path.display()))
+                    .with_notes(vec![format!("{}", e)]),
+            );
+            return Err(());
+        }
+    }
+
+    Ok(())
+}
+
+fn output_path(output_dir: Option<&PathBuf>, file_name: &str) -> PathBuf {
+    if let Some(dir) = output_dir {
+        dir.join(file_name)
     } else {
-        Ok(())
+        PathBuf::from(file_name)
     }
 }
 
-fn compile_impl(items: Items, output_file: &Path) -> Result<(), Error> {
+fn compile_header(items: Items, output_file: &Path) -> Result<(), Error> {
     let (slice_decls, owned_ptr_decls, owned_slice_decls) = collect_type_decls(&items);
     let mut file = OpenOptions::new()
         .write(true)
         .create(true)
         .open(output_file)?;
 
-    let template = CTemplate {
+    let template = CHeaderTemplate {
         items,
         slice_decls,
         owned_ptr_decls,
         owned_slice_decls,
+    };
+    write!(file, "{}", template.render().unwrap())?;
+    Ok(())
+}
+
+fn compile_implementation_header(
+    items: Items,
+    header_name: String,
+    output_file: &Path,
+) -> Result<(), Error> {
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .open(output_file)?;
+
+    let template = CImplementationHeaderTemplate { items, header_name };
+    write!(file, "{}", template.render().unwrap())?;
+    Ok(())
+}
+
+fn compile_export_source(
+    items: Items,
+    header_name: String,
+    implementation_header_name: String,
+    output_file: &Path,
+) -> Result<(), Error> {
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .open(output_file)?;
+
+    let template = CExportSourceTemplate {
+        items,
+        header_name,
+        implementation_header_name,
     };
     write!(file, "{}", template.render().unwrap())?;
     Ok(())

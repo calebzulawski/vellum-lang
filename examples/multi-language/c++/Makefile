@@ -1,9 +1,11 @@
-.PHONY: mylibrary.hpp
-mylibrary.hpp:
-	cargo run compile cpp ../mylibrary.abi
+GENERATED := mylibrary.hpp mylibrary_export.inl
+EXPORT_FLAGS := -DVELLUM_DYNAMIC
 
-libmylibrary.so: mylibrary.hpp mylibrary.cpp
-	${CXX} -shared -fPIC -fvisibility=hidden mylibrary.cpp -I ../../../library/c++/include -o libmylibrary.so
+$(GENERATED): ../mylibrary.abi
+	cargo run compile cpp --mode export ../mylibrary.abi
+
+libmylibrary.so: $(GENERATED) mylibrary.cpp
+	${CXX} -shared -fPIC -fvisibility=hidden $(EXPORT_FLAGS) mylibrary.cpp -I ../../../library/c++/include -o libmylibrary.so
 
 test: main.cpp libmylibrary.so mylibrary.hpp
 	${CXX} main.cpp -I ../../../library/c++/include libmylibrary.so -Wl,-rpath,'$$ORIGIN' -o test
@@ -21,4 +23,4 @@ run: test test_against_c
 
 .PHONY: clean
 clean:
-	rm -f libmylibrary.so test test_against_c mylibrary.hpp
+	rm -f libmylibrary.so test test_against_c $(GENERATED)

@@ -1,49 +1,89 @@
-use super::{Compile, Items};
+use super::{Compile, Items, Mode};
 use crate::parse::{Context, ast};
 use askama::Template;
 use codespan_reporting::diagnostic::Diagnostic;
 use std::{
     fs::OpenOptions,
     io::{Error, Write},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 #[derive(Template)]
-#[template(path = "c++/compile.hpp")]
-struct CppTemplate {
+#[template(path = "c++/import.hpp")]
+struct CppHeaderTemplate {
     items: Items,
 }
 
+#[derive(Template)]
+#[template(path = "c++/export.inl", escape = "none")]
+struct CppExportInlineTemplate {
+    items: Items,
+    header_name: String,
+}
+
 pub(super) fn compile(context: &mut Context, options: Compile, items: Items) -> Result<(), ()> {
-    let file_name = Path::new(&options.file)
-        .with_extension("hpp")
-        .file_name()
+    let file_stem = Path::new(&options.file)
+        .file_stem()
         .unwrap()
-        .to_owned();
-    let output_file = if let Some(output_dir) = options.resolve_output_dir() {
-        output_dir.join(file_name)
-    } else {
-        file_name.into()
-    };
-    if let Err(e) = compile_impl(items, &output_file) {
+        .to_string_lossy()
+        .into_owned();
+    let output_dir = options.resolve_output_dir();
+
+    let header_filename = format!("{}.hpp", file_stem);
+    let header_path = output_path(output_dir.as_ref(), &header_filename);
+    if let Err(e) = compile_header(items.clone(), &header_path) {
         context.report(
             &Diagnostic::error()
-                .with_message(format!("error writing to `{}`", output_file.display()))
+                .with_message(format!("error writing to `{}`", header_path.display()))
                 .with_notes(vec![format!("{}", e)]),
         );
-        Err(())
+        return Err(());
+    }
+
+    if options.mode == Mode::Export {
+        let inline_filename = format!("{}_export.inl", file_stem);
+        let inline_path = output_path(output_dir.as_ref(), &inline_filename);
+        if let Err(e) = compile_export_inline(items, header_filename, &inline_path) {
+            context.report(
+                &Diagnostic::error()
+                    .with_message(format!("error writing to `{}`", inline_path.display()))
+                    .with_notes(vec![format!("{}", e)]),
+            );
+            return Err(());
+        }
+    }
+
+    Ok(())
+}
+
+fn output_path(output_dir: Option<&PathBuf>, file_name: &str) -> PathBuf {
+    if let Some(dir) = output_dir {
+        dir.join(file_name)
     } else {
-        Ok(())
+        PathBuf::from(file_name)
     }
 }
 
-fn compile_impl(items: Items, output_file: &Path) -> Result<(), Error> {
+fn compile_header(items: Items, output_file: &Path) -> Result<(), Error> {
     let mut file = OpenOptions::new()
         .write(true)
         .create(true)
+        .truncate(true)
         .open(output_file)?;
 
-    let template = CppTemplate { items };
+    let template = CppHeaderTemplate { items };
+    write!(file, "{}", template.render().unwrap())?;
+    Ok(())
+}
+
+fn compile_export_inline(items: Items, header_name: String, output_file: &Path) -> Result<(), Error> {
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(output_file)?;
+
+    let template = CppExportInlineTemplate { items, header_name };
     write!(file, "{}", template.render().unwrap())?;
     Ok(())
 }

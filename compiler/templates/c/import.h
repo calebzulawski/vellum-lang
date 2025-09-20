@@ -10,23 +10,13 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
-#ifndef VELLUM_API
-#  ifdef VELLUM_DYNAMIC
-#    ifdef VELLUM_EXPORT
-#      if defined(_WIN32) || defined(__CYGWIN__)
-#        define VELLUM_API __declspec(dllexport)
-#      else
-#        define VELLUM_API __attribute__((visibility("default")))
-#      endif
-#    else
-#      if defined(_WIN32) || defined(__CYGWIN__)
-#        define VELLUM_API __declspec(dllimport)
-#      else
-#        define VELLUM_API
-#      endif
-#    endif
+#ifndef VELLUM_ABI
+#  if defined(VELLUM_STATIC)
+#    define VELLUM_ABI
+#  elif defined(_WIN32) || defined(__CYGWIN__)
+#    define VELLUM_ABI __declspec(dllimport)
 #  else
-#    define VELLUM_API
+#    define VELLUM_ABI __attribute__((visibility("default")))
 #  endif
 #endif
 
@@ -61,25 +51,9 @@ typedef struct { {{ d.slice_name }} slice_data; void (*deleter)({{ d.slice_name 
 {% endfor %}
 
 {% for f in items.functions %}
-VELLUM_API {{ f.returns|retty }} {{ f.name }}(
+VELLUM_ABI {{ f.returns|retty }} {{ f.name }}(
 {%- for arg in f.args %}
     {{ arg.1|ty }} {{ arg.0 }}{% call m::comma() %}
 {%- endfor %}
 ) ;
 {% endfor %}
-
-#define VELLUM_IMPLEMENT() \
-  /* C backend: forward to user functions with prefix vellum_implement_ */ \
-  {% for f in items.functions -%}
-  {{ f.returns|retty }} {{ f.name }}( \
-  {%- for arg in f.args %}
-    {{ arg.1|ty }} {{ arg.0 }}{% call m::comma() %} \
-  {%- endfor %}
-  ) { \
-    return vellum_implement_{{ f.name }}( \
-      {%- for arg in f.args %}
-      {{ arg.0 }}{% call m::comma() %} \
-      {%- endfor %}
-    ); \
-  } \
-  {% endfor %}

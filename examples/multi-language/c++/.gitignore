@@ -1,4 +1,5 @@
 mylibrary.hpp
+mylibrary_export.inl
 libmylibrary.so
 test
 test_against_c

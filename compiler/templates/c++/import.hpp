@@ -13,6 +13,3 @@
 {% include "c++/_structs.hpp" %}
 
 {% include "c++/_functions.hpp" %}
-
-{% include "c++/_implement_macro.hpp" %}
-

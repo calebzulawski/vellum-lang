@@ -1,9 +1,6 @@
-#define VELLUM_DYNAMIC
-#define VELLUM_EXPORT
-
 #include <stdlib.h>
 #include <string.h>
-#include "mylibrary.h"
+#include "mylibrary_export.h"
 
 struct KvStore {
     struct KvEntry *entries;
@@ -27,7 +24,7 @@ static void free_kventry_slice(vellum_slice_mut_KvEntry slice) {
     free(slice.data);
 }
 
-VELLUM_API vellum_owned_ptr_KvStore_ptr kv_create(void) {
+vellum_owned_ptr_KvStore_ptr vellum_implement_kv_create(void) {
     struct KvStore *s = (struct KvStore*)malloc(sizeof(struct KvStore));
     s->entries = NULL;
     s->len = 0;
@@ -47,7 +44,7 @@ static char* dup_cstr(const char* s) {
     return p;
 }
 
-VELLUM_API void kv_set(struct KvStore *store, const char *key, const char *value) {
+void vellum_implement_kv_set(struct KvStore *store, const char *key, const char *value) {
     if (!store || !key) return;
     // linear search
     for (size_t i = 0; i < store->len; ++i) {
@@ -70,7 +67,7 @@ VELLUM_API void kv_set(struct KvStore *store, const char *key, const char *value
     store->len += 1;
 }
 
-VELLUM_API const char *kv_get(const struct KvStore *store, const char *key) {
+const char *vellum_implement_kv_get(const struct KvStore *store, const char *key) {
     if (!store || !key) return NULL;
     for (size_t i = 0; i < store->len; ++i) {
         if (strcmp(store->entries[i].key, key) == 0) {
@@ -80,7 +77,7 @@ VELLUM_API const char *kv_get(const struct KvStore *store, const char *key) {
     return NULL;
 }
 
-VELLUM_API void kv_delete(struct KvStore *store, const char *key) {
+void vellum_implement_kv_delete(struct KvStore *store, const char *key) {
     if (!store || !key) return;
     for (size_t i = 0; i < store->len; ++i) {
         if (strcmp(store->entries[i].key, key) == 0) {
@@ -96,11 +93,11 @@ VELLUM_API void kv_delete(struct KvStore *store, const char *key) {
     }
 }
 
-VELLUM_API size_t kv_size(const struct KvStore *store) {
+size_t vellum_implement_kv_size(const struct KvStore *store) {
     return store ? store->len : 0;
 }
 
-VELLUM_API vellum_owned_slice_mut_KvEntry kv_entries(const struct KvStore *store) {
+vellum_owned_slice_mut_KvEntry vellum_implement_kv_entries(const struct KvStore *store) {
     vellum_owned_slice_mut_KvEntry out;
     if (!store || store->len == 0) {
         out.slice_data.data = NULL;
@@ -124,7 +121,7 @@ VELLUM_API vellum_owned_slice_mut_KvEntry kv_entries(const struct KvStore *store
     return out;
 }
 
-VELLUM_API void kv_clear(struct KvStore *store) {
+void vellum_implement_kv_clear(struct KvStore *store) {
     if (!store) return;
     for (size_t i = 0; i < store->len; ++i) {
         free((void*)store->entries[i].key);
@@ -132,4 +129,3 @@ VELLUM_API void kv_clear(struct KvStore *store) {
     }
     store->len = 0;
 }
-

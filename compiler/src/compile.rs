@@ -13,10 +13,19 @@ enum Language {
     Python,
 }
 
+#[derive(ValueEnum, Copy, Clone, Debug, Eq, PartialEq)]
+pub(crate) enum Mode {
+    Import,
+    Export,
+}
+
 #[derive(Parser)]
 pub struct Compile {
     #[clap(value_enum)]
     language: Language,
+
+    #[clap(long, value_enum, default_value_t = Mode::Import)]
+    mode: Mode,
 
     file: String,
 
@@ -32,23 +41,27 @@ impl Compile {
     }
 }
 
+#[derive(Clone)]
 pub(crate) struct AbstractStruct {
     docs: Vec<String>,
     name: String,
 }
 
+#[derive(Clone)]
 pub(crate) struct Field {
     docs: Vec<String>,
     name: String,
     ty: ast::Type,
 }
 
+#[derive(Clone)]
 pub(crate) struct Struct {
     docs: Vec<String>,
     name: String,
     fields: Vec<Field>,
 }
 
+#[derive(Clone)]
 pub(crate) struct Function {
     docs: Vec<String>,
     name: String,
@@ -56,6 +69,7 @@ pub(crate) struct Function {
     returns: Option<ast::Type>,
 }
 
+#[derive(Clone)]
 pub(crate) struct Items {
     abstract_structs: Vec<AbstractStruct>,
     structs: Vec<Struct>,

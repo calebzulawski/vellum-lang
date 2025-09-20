@@ -1,23 +1,13 @@
 {% import "c++/_macros.hpp" as m %}
 
-#ifndef VELLUM_API
-  #ifdef VELLUM_DYNAMIC
-    #ifdef VELLUM_EXPORT
-      #if defined(_WIN32) || defined(__CYGWIN__)
-        #define VELLUM_API __declspec(dllexport)
-      #else
-        #define VELLUM_API __attribute__((visibility("default")))
-      #endif
-    #else
-      #if defined(_WIN32) || defined(__CYGWIN__)
-        #define VELLUM_API __declspec(dllimport)
-      #else
-        #define VELLUM_API
-      #endif
-    #endif
-  #else
-    #define VELLUM_API
-  #endif
+#ifndef VELLUM_ABI
+#  if defined(VELLUM_STATIC)
+#    define VELLUM_ABI
+#  elif defined(_WIN32) || defined(__CYGWIN__)
+#    define VELLUM_ABI __declspec(dllimport)
+#  else
+#    define VELLUM_ABI __attribute__((visibility("default")))
+#  endif
 #endif
 
 namespace vellum_private_abi {
@@ -25,7 +15,7 @@ extern "C" {
 
 {% for f in items.functions %}
 {%- call m::docs("", f.docs) %}
-VELLUM_API {{ f.returns|retty }} {{ f.name }}(
+VELLUM_ABI {{ f.returns|retty }} {{ f.name }}(
 {%- for arg in f.args %}
   {{ arg.1|ty }} {{ arg.0 }}{% call m::comma() %}
 {%- endfor %}
