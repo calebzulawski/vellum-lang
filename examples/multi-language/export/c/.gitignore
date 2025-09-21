@@ -1,0 +1,4 @@
+mylibrary.h
+mylibrary_export.inl
+libmylibrary.*
+mylibrary.dll
