@@ -1,11 +1,11 @@
-GENERATED := mylibrary.h mylibrary_export.h mylibrary_export.c
+GENERATED := mylibrary.h mylibrary_export.inl
 EXPORT_FLAGS := -DVELLUM_DYNAMIC
 
 $(GENERATED): ../mylibrary.abi
 	cargo run compile c --mode export ../mylibrary.abi
 
 libmylibrary_c.so: $(GENERATED) mylibrary.c
-	${CC} -shared -fPIC -fvisibility=hidden $(EXPORT_FLAGS) mylibrary.c mylibrary_export.c -I . -I ../../../library/c++/include -o libmylibrary_c.so
+	${CC} -shared -fPIC -fvisibility=hidden $(EXPORT_FLAGS) mylibrary.c -I . -I ../../../library/c++/include -o libmylibrary_c.so
 
 ../c++/libmylibrary.so:
 	$(MAKE) -C ../c++ libmylibrary.so
