@@ -1,0 +1,4 @@
+mylibrary.hpp
+mylibrary_export.inl
+libmylibrary.*
+mylibrary.dll

@@ -1,6 +1,0 @@
-mylibrary.h
-mylibrary_export.h
-mylibrary_export.c
-libmylibrary_c.so
-test_c_against_c
-test_c_against_cpp
