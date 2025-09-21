@@ -22,18 +22,10 @@ struct CHeaderTemplate {
 }
 
 #[derive(Template)]
-#[template(path = "c/export.h", escape = "none")]
-struct CImplementationHeaderTemplate {
+#[template(path = "c/export.inl", escape = "none")]
+struct CExportInlineTemplate {
     items: Items,
     header_name: String,
-}
-
-#[derive(Template)]
-#[template(path = "c/export.c", escape = "none")]
-struct CExportSourceTemplate {
-    items: Items,
-    header_name: String,
-    implementation_header_name: String,
 }
 
 // Concrete typedefs needed in emitted C header
@@ -73,36 +65,12 @@ pub(super) fn compile(context: &mut Context, options: Compile, items: Items) -> 
     }
 
     if options.mode == Mode::Export {
-        let implementation_header_filename = format!("{}_export.h", file_stem);
-        let implementation_header_path =
-            output_path(output_dir.as_ref(), &implementation_header_filename);
-        if let Err(e) = compile_implementation_header(
-            items.clone(),
-            header_filename.clone(),
-            &implementation_header_path,
-        ) {
+        let inline_filename = format!("{}_export.inl", file_stem);
+        let inline_path = output_path(output_dir.as_ref(), &inline_filename);
+        if let Err(e) = compile_export_inline(items, header_filename, &inline_path) {
             context.report(
                 &Diagnostic::error()
-                    .with_message(format!(
-                        "error writing to `{}`",
-                        implementation_header_path.display()
-                    ))
-                    .with_notes(vec![format!("{}", e)]),
-            );
-            return Err(());
-        }
-
-        let source_filename = format!("{}_export.c", file_stem);
-        let source_path = output_path(output_dir.as_ref(), &source_filename);
-        if let Err(e) = compile_export_source(
-            items,
-            header_filename,
-            implementation_header_filename,
-            &source_path,
-        ) {
-            context.report(
-                &Diagnostic::error()
-                    .with_message(format!("error writing to `{}`", source_path.display()))
+                    .with_message(format!("error writing to `{}`", inline_path.display()))
                     .with_notes(vec![format!("{}", e)]),
             );
             return Err(());
@@ -125,6 +93,7 @@ fn compile_header(items: Items, output_file: &Path) -> Result<(), Error> {
     let mut file = OpenOptions::new()
         .write(true)
         .create(true)
+        .truncate(true)
         .open(output_file)?;
 
     let template = CHeaderTemplate {
@@ -137,7 +106,7 @@ fn compile_header(items: Items, output_file: &Path) -> Result<(), Error> {
     Ok(())
 }
 
-fn compile_implementation_header(
+fn compile_export_inline(
     items: Items,
     header_name: String,
     output_file: &Path,
@@ -145,29 +114,10 @@ fn compile_implementation_header(
     let mut file = OpenOptions::new()
         .write(true)
         .create(true)
+        .truncate(true)
         .open(output_file)?;
 
-    let template = CImplementationHeaderTemplate { items, header_name };
-    write!(file, "{}", template.render().unwrap())?;
-    Ok(())
-}
-
-fn compile_export_source(
-    items: Items,
-    header_name: String,
-    implementation_header_name: String,
-    output_file: &Path,
-) -> Result<(), Error> {
-    let mut file = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .open(output_file)?;
-
-    let template = CExportSourceTemplate {
-        items,
-        header_name,
-        implementation_header_name,
-    };
+    let template = CExportInlineTemplate { items, header_name };
     write!(file, "{}", template.render().unwrap())?;
     Ok(())
 }
