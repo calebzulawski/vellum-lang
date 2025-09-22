@@ -2,6 +2,7 @@
 
 // Forward declarations, including incomplete types
 {% for s in items.abstract_structs -%}
+{%- call m::docs("", s.docs) %}
 struct {{ s.name }};
 {% endfor -%}
 {% for s in items.structs -%}
