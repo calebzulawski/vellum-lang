@@ -8,12 +8,31 @@ import vellum
 
 {%- for s in items.abstract_structs %}
 class {{ s.name }}(ct.Structure):
+    __doc__ = "\n".join([
+    {%- for line in s.docs | with_incomplete_note %}
+        {{ line|repr }},
+    {%- endfor %}
+    ])
     pass
 
 {%- endfor %}
 
 {%- for s in items.structs %}
 class {{ s.name }}(ct.Structure):
+    __doc__ = "\n".join([
+    {%- for doc in s.docs %}
+        {{ doc|repr }},
+    {%- endfor %}
+    {%- set field_docs = s.fields | field_docs %}
+    {%- if !field_docs.is_empty() %}
+        {%- if !s.docs.is_empty() %}
+        "",
+        {%- endif %}
+        {%- for line in field_docs %}
+        {{ line|repr }},
+        {%- endfor %}
+    {%- endif %}
+    ])
     _fields_ = [
     {%- for field in s.fields %}
         ('{{ field.name }}', {{ field.ty|ty }}),
@@ -35,3 +54,10 @@ def load(*args):
     {%- endfor %}
 
     return lib
+
+load.__doc__ = "\n".join([
+    'Loads a CDLL with the following functions:',
+{%- for line in items.functions | function_doc_lines %}
+    {{ line|repr }},
+{%- endfor %}
+])

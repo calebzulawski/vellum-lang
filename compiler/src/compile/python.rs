@@ -121,6 +121,7 @@ impl std::fmt::Display for DisplayType<'_> {
 
 mod filters {
     use super::*;
+    use crate::compile::{Field, Function};
 
     pub fn ty(ty: &ast::Type, _: &dyn askama::Values) -> askama::Result<String> {
         Ok(DisplayType(ty).to_string())
@@ -132,5 +133,63 @@ mod filters {
         } else {
             return Ok("None".to_string());
         }
+    }
+
+    pub fn repr(value: &String, _: &dyn askama::Values) -> askama::Result<String> {
+        Ok(format!("{:?}", value))
+    }
+
+    pub fn with_incomplete_note(
+        docs: &Vec<String>,
+        _: &dyn askama::Values,
+    ) -> askama::Result<Vec<String>> {
+        let mut lines = docs.clone();
+        if !lines.is_empty() {
+            lines.push(String::new());
+        }
+        lines.push("Incomplete type; field definitions are provided elsewhere.".to_string());
+        Ok(lines)
+    }
+
+    pub fn field_docs(
+        fields: &Vec<Field>,
+        _: &dyn askama::Values,
+    ) -> askama::Result<Vec<String>> {
+        let mut lines = Vec::new();
+        let mut has_any = false;
+
+        for field in fields {
+            if field.docs.is_empty() {
+                continue;
+            }
+
+            if !has_any {
+                lines.push("Fields:".to_string());
+                has_any = true;
+            }
+
+            let mut docs = field.docs.iter();
+            if let Some(first) = docs.next() {
+                lines.push(format!("- {}: {}", field.name, first));
+            }
+            lines.extend(docs.map(|doc| format!("  {}", doc)));
+        }
+
+        Ok(lines)
+    }
+
+    pub fn function_doc_lines(
+        functions: &Vec<Function>,
+        _: &dyn askama::Values,
+    ) -> askama::Result<Vec<String>> {
+        let mut lines = Vec::new();
+
+        for function in functions {
+            lines.push(String::new());
+            lines.push(format!("- {}", function.name));
+            lines.extend(function.docs.iter().map(|doc| format!("  {}", doc)));
+        }
+
+        Ok(lines)
     }
 }

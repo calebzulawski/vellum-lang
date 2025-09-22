@@ -23,12 +23,15 @@
 {% import "c/_macros.h" as m %}
 
 {% for s in items.abstract_structs -%}
+{%- call m::docs("", s.docs) %}
 struct {{ s.name }};
 {% endfor %}
 
 {% for s in items.structs %}
+{%- call m::docs("", s.docs) %}
 struct {{ s.name }} {
 {%- for field in s.fields %}
+{%- call m::docs("    ", field.docs) %}
     {{ field.ty|ty }} {{ field.name }};
 {%- endfor %}
 };
@@ -51,6 +54,7 @@ typedef struct { {{ d.slice_name }} slice_data; void (*deleter)({{ d.slice_name 
 {% endfor %}
 
 {% for f in items.functions %}
+{%- call m::docs("", f.docs) %}
 VELLUM_ABI {{ f.returns|retty }} {{ f.name }}(
 {%- for arg in f.args %}
     {{ arg.1|ty }} {{ arg.0 }}{% call m::comma() %}
